@@ -28,31 +28,28 @@ All options live under *Settings → Tools → IntelliJ-WebBrowser*, including t
 
 ## Requirements
 
-- IntelliJ IDEA **2026.1** (build 261) or newer, running on a JCEF-enabled JBR
-  (the default JetBrains Runtime includes JCEF)
-- JDK 21+ available to build (this project compiles to Java 21 bytecode; it
-  builds fine with the JDK 25.
+- IntelliJ IDEA **2026.1** (build 261) or newer, running on a JCEF-enabled
+  JetBrains Runtime (the default JBR includes JCEF).
+- A JDK to build with: the plugin compiles to Java 21 bytecode, so **JDK 21 or
+  newer** works.
 
 ## Build
 
-The build targets a **local** IntelliJ install (so it doesn't download a full IDE
-distribution). It defaults to `/Applications/IntelliJ IDEA.app`, but the path is
-**not** hardcoded — override it any of these ways:
+The build compiles against a **local** IntelliJ installation, so it doesn't
+download a full IDE distribution. By default it looks for the standard macOS
+location `/Applications/IntelliJ IDEA.app`; on other platforms — or for a
+JetBrains Toolbox install — point it elsewhere via any of:
 
 ```bash
-./gradlew buildPlugin                                   # uses the default path
-./gradlew buildPlugin -PlocalIdePath="/path/to/IDE.app" # one-off override
-LOCAL_IDE_PATH="/path/to/IDE.app" ./gradlew buildPlugin  # env var
+./gradlew buildPlugin                                # use the default path
+./gradlew buildPlugin -PlocalIdePath="/path/to/IDE"  # one-off override
+LOCAL_IDE_PATH="/path/to/IDE" ./gradlew buildPlugin  # environment variable
 ```
 
-…or set `localIdePath=...` in this project's `gradle.properties` (a commented
-line is there) or in your `~/.gradle/gradle.properties`.
+…or set `localIdePath=...` in the project's `gradle.properties` (a commented
+example is included) or in `~/.gradle/gradle.properties`.
 
-The installable plugin zip is produced at:
-
-```
-build/distributions/intellij-webbrowser-0.2.0.zip
-```
+The installable plugin zip lands in `build/distributions/`.
 
 ## Try it without installing
 
