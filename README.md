@@ -11,32 +11,20 @@ server right next to your code.
 
 ## Features
 
-- A **Web Browser** tool window (right dock) with an embedded Chromium view
-- A themed, **SVG empty-state** shown before a page is loaded and whenever a load
-  fails (replaces Chromium's raw error page) — with a one-click link to your home URL
-- Back / forward / reload and an editable address bar
-- A configurable **home / dev-server URL** (default `http://localhost:3000`)
-  under *Settings → Tools → IntelliJ-WebBrowser*
-- **Open in…** — opens the current address in your system default browser, or any
-  browser configured in the IDE (Settings → Tools → Web Browsers)
-- **Live reload** (toolbar, second row):
-  - **Reload on save** — reloads the page whenever a watched file in the project
-    is saved (⌘S or IntelliJ autosave). Choose *which* files in
-    *Settings → Tools → IntelliJ-WebBrowser*:
-    - **Folder** — a directory picked from this project (blank = whole project)
-    - **Extensions** — comma-separated list (blank = any file); defaults to common
-      web extensions (`html, css, scss, js, ts, jsx, tsx, vue, svelte, …`)
-  - **Auto-refresh every N s** — reloads on a fixed timer; default **5 s**, type
-    any number of seconds
-- **Open browser on run** — when a run configuration starts, open the tool window
-  and navigate it to your app. Configure in *Settings → Tools → IntelliJ-WebBrowser*:
-  - **Run configuration** — a specific one from this project, or *Any*
-  - **URL** — what to open (blank = home URL)
-  - **Open when** — *the URL is reachable* (polls host:port until the server
-    accepts connections — the truest "after the app has loaded"; default),
-    *after a fixed delay*, or *immediately on launch*
+### Browse
+- **Embedded browser** — a Chromium (JCEF) view in a right-dock **Web Browser** tool window, with back / forward / reload and an editable address bar.
+- **Themed empty state** — a clean, theme-aware SVG screen before anything loads and when a page fails to load, in place of Chromium's raw error page.
+- **Open in…** — hand the current page to your system default browser, or any browser configured under *Settings → Tools → Web Browsers*.
 
-Toggle states and the interval are remembered between sessions.
+### Live reload
+- **Reload on save** — reload when a watched file is saved (⌘S or IntelliJ autosave). Pick the **folder** to watch (default: the whole project) and the **extensions** (default: common web files like `html, css, scss, js, ts, jsx, tsx, vue, svelte`).
+- **Auto-refresh** — reload on a fixed timer; default **5 s**, set any interval.
+
+### Open on run
+- When a run configuration starts, open the tool window and navigate it to your app. Choose **which** configuration (or *Any*), the **URL** (blank = home), and **when** to open: *the URL is reachable* (polls the host:port until the server responds — the truest "after the app has loaded"; default), *after a fixed delay*, or *immediately on launch*.
+
+### Configuration
+All options live under *Settings → Tools → IntelliJ-WebBrowser*, including the **home / dev-server URL** (default `http://localhost:3000`). Toggle states and the refresh interval persist between sessions.
 
 ## Requirements
 
