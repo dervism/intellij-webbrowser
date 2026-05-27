@@ -1,0 +1,90 @@
+package no.dervis.webbrowser.ui
+
+import com.intellij.util.ui.UIUtil
+import java.awt.Color
+
+/**
+ * Builds the themed "nothing loaded" page shown in the browser before a real URL
+ * is loaded (and when a load fails). Rendered as HTML with an inline SVG so it
+ * fully controls the look and adapts to the current IDE theme.
+ *
+ * The empty state is intentionally minimal: just the illustration and a title.
+ * The error variant adds a one-line note about which URL failed.
+ */
+object WebBrowserPlaceholder {
+
+    fun html(targetUrl: String, errorText: String? = null): String {
+        val bg = hex(UIUtil.getPanelBackground())
+        val fg = hex(UIUtil.getLabelForeground())
+        val muted = hex(UIUtil.getContextHelpForeground())
+        val stroke = hex(blend(UIUtil.getLabelForeground(), UIUtil.getPanelBackground(), 0.55))
+        val accent = "#3574F0"
+
+        val isError = errorText != null
+        val title = if (isError) "Couldn't reach the site" else "No page loaded yet"
+        val subtitle = if (isError) {
+            "<p class=\"sub\">${esc(errorText)}.<br/>Is your dev server running at <b>${esc(targetUrl)}</b>?</p>"
+        } else {
+            ""
+        }
+
+        return """
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<style>
+  html, body { height: 100%; margin: 0; }
+  body {
+    display: flex; align-items: center; justify-content: center;
+    background: $bg; color: $fg;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { text-align: center; padding: 24px; max-width: 460px; }
+  .art { margin-bottom: 22px; }
+  h1 { font-size: 18px; font-weight: 600; margin: 0; }
+  .sub { font-size: 13px; line-height: 1.5; color: $muted; margin: 10px 0 0; word-break: break-all; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="art">${svg(accent, stroke)}</div>
+    <h1>${esc(title)}</h1>
+    $subtitle
+  </div>
+</body>
+</html>
+        """.trimIndent()
+    }
+
+    private fun svg(accent: String, stroke: String): String = """
+<svg width="132" height="132" viewBox="0 0 132 132" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="16" y="26" width="100" height="80" rx="9" fill="none" stroke="$stroke" stroke-width="2.5"/>
+  <line x1="16" y1="44" x2="116" y2="44" stroke="$stroke" stroke-width="2.5"/>
+  <circle cx="28" cy="35" r="2.8" fill="#FF5F57"/>
+  <circle cx="38" cy="35" r="2.8" fill="#FEBC2E"/>
+  <circle cx="48" cy="35" r="2.8" fill="#28C840"/>
+  <circle cx="66" cy="75" r="20" fill="none" stroke="$accent" stroke-width="2.8"/>
+  <ellipse cx="66" cy="75" rx="8.2" ry="20" fill="none" stroke="$accent" stroke-width="2.8"/>
+  <line x1="46" y1="75" x2="86" y2="75" stroke="$accent" stroke-width="2.8"/>
+  <line x1="66" y1="55" x2="66" y2="95" stroke="$accent" stroke-width="2.8" opacity="0.5"/>
+</svg>
+    """.trimIndent()
+
+    private fun hex(c: Color): String = "#%02x%02x%02x".format(c.red, c.green, c.blue)
+
+    /** Mix [a] toward [b] by [ratio] (0 = all a, 1 = all b). */
+    private fun blend(a: Color, b: Color, ratio: Double): Color {
+        val r = (a.red * (1 - ratio) + b.red * ratio).toInt()
+        val g = (a.green * (1 - ratio) + b.green * ratio).toInt()
+        val bl = (a.blue * (1 - ratio) + b.blue * ratio).toInt()
+        return Color(r.coerceIn(0, 255), g.coerceIn(0, 255), bl.coerceIn(0, 255))
+    }
+
+    private fun esc(s: String): String =
+        s.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\"", "&quot;")
+}

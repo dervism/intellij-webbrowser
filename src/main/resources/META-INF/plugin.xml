@@ -1,0 +1,89 @@
+<idea-plugin>
+    <id>no.dervis.webbrowser</id>
+    <name>IntelliJ-WebBrowser</name>
+    <!-- Vendor / "Additional Information" on the Marketplace & plugin details panel.
+         Update the url to your own repository or homepage before publishing. -->
+    <vendor email="dervis@mansuroglu.net" url="https://github.com/dervism/intellij-webbrowser">Dervis Mansuroglu</vendor>
+
+    <!-- OVERVIEW: shown as the Marketplace "Overview" tab and the plugin description. -->
+    <description><![CDATA[
+        <p><b>IntelliJ-WebBrowser</b> embeds a Chromium-based web browser (the IDE's
+        bundled JCEF runtime) directly in a tool window, so you can preview a local
+        web dev server right next to your code &mdash; no Alt&#8209;Tab required.</p>
+
+        <p><em>Note:</em> the embedded view is plain Chromium (the IDE's bundled JCEF
+        runtime), so it doesn't share your everyday browser's profile, extensions, or
+        bookmarks. The <b>Open in&hellip;</b> button hands the current page to your
+        system default browser, or any browser configured in the IDE.</p>
+
+        <h3>Features</h3>
+        <ul>
+            <li><b>Embedded browser tool window</b> &mdash; back / forward / reload and an editable address bar.</li>
+            <li><b>Themed empty state</b> &mdash; a clean, theme-aware SVG placeholder instead of Chromium's raw error page when nothing is loaded or a site is unreachable.</li>
+            <li><b>Live reload on save</b> &mdash; reload when files are saved; pick the folder and file extensions to watch.</li>
+            <li><b>Timed auto-refresh</b> &mdash; reload on a fixed interval you set, in seconds.</li>
+            <li><b>Open browser on run</b> &mdash; when a run configuration starts, wait until the URL is reachable, then open and navigate the tool window automatically.</li>
+            <li><b>Open in&hellip;</b> &mdash; open the current page in your system default browser, or any browser configured under <b>Settings &gt; Tools &gt; Web Browsers</b>.</li>
+        </ul>
+
+        <h3>Getting started</h3>
+        <p>Open the <b>Web Browser</b> tool window from the right tool-window bar, then set
+        your dev-server URL, live-reload, and open-on-run options under
+        <b>Settings &gt; Tools &gt; IntelliJ-WebBrowser</b>.</p>
+
+        <h3>Requirements</h3>
+        <p>Requires a JCEF-enabled JetBrains Runtime (the default JBR). If JCEF is
+        unavailable, the tool window shows a short notice instead of a browser.</p>
+
+        <h3>Additional information</h3>
+        <ul>
+            <li><b>Author:</b> Dervis Mansuroglu</li>
+            <li><b>Source code &amp; issue tracker:</b> <a href="https://github.com/dervism/intellij-webbrowser">github.com/dervism/intellij-webbrowser</a></li>
+            <li><b>License:</b> MIT &mdash; free and open source.</li>
+        </ul>
+        <p><b>Technical details:</b></p>
+        <ul>
+            <li>Written in Kotlin and built with the IntelliJ Platform Gradle Plugin.</li>
+            <li>Embeds Chromium via JCEF (the bundled JetBrains Runtime) &mdash; no external browser is required for the tool window.</li>
+            <li>Compatible with IntelliJ IDEA 2026.1+ (since-build 261) and other JetBrains IDEs running a JCEF-enabled runtime.</li>
+            <li>A lightweight platform plugin &mdash; depends only on <code>com.intellij.modules.platform</code>.</li>
+        </ul>
+    ]]></description>
+
+    <!-- WHAT'S NEW: shown as the Marketplace "What's New" / change-notes section. -->
+    <change-notes><![CDATA[
+        <h3>0.2.0</h3>
+        <ul>
+            <li><b>New &mdash; Open in&hellip;:</b> a dropdown to open the current page in the system default browser or any IDE-configured browser.</li>
+            <li><b>New &mdash; Open browser on run:</b> automatically open the tool window when a run configuration starts, waiting until the URL is reachable.</li>
+            <li><b>New &mdash; Live reload:</b> reload on file save (selectable folder &amp; extensions) plus timed auto-refresh.</li>
+            <li><b>New &mdash; Themed empty state:</b> a themed SVG placeholder in place of Chromium's error page.</li>
+        </ul>
+        <h3>0.1.0</h3>
+        <ul>
+            <li>Initial release: embedded Chromium browser tool window with an address bar, navigation, and a configurable home URL.</li>
+        </ul>
+    ]]></change-notes>
+
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <toolWindow
+            id="Web Browser"
+            anchor="right"
+            icon="/icons/webbrowser.svg"
+            factoryClass="no.dervis.webbrowser.ui.WebBrowserToolWindowFactory"/>
+
+        <projectConfigurable
+            parentId="tools"
+            id="no.dervis.webbrowser.settings"
+            displayName="IntelliJ-WebBrowser"
+            instance="no.dervis.webbrowser.ui.WebBrowserConfigurable"/>
+    </extensions>
+
+    <projectListeners>
+        <listener
+            class="no.dervis.webbrowser.execution.WebBrowserExecutionListener"
+            topic="com.intellij.execution.ExecutionListener"/>
+    </projectListeners>
+</idea-plugin>
