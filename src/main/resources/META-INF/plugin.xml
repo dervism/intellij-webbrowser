@@ -52,6 +52,14 @@
 
     <!-- WHAT'S NEW: shown as the Marketplace "What's New" / change-notes section. -->
     <change-notes><![CDATA[
+        <h3>0.2.1</h3>
+        <ul>
+            <li><b>Friendlier load-failure view:</b> when a page fails to load, the
+            embedded view falls back to the same themed home page shown on first
+            open &mdash; no more cryptic browser error messages or assumptions about
+            what kind of site you're loading.</li>
+            <li>Subtle pulse animation on the home-page globe for a touch of life.</li>
+        </ul>
         <h3>0.2.0</h3>
         <ul>
             <li><b>New &mdash; Open in&hellip;:</b> a dropdown to open the current page in the system default browser or any IDE-configured browser.</li>

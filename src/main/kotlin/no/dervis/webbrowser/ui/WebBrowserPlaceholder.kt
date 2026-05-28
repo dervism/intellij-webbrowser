@@ -4,29 +4,24 @@ import com.intellij.util.ui.UIUtil
 import java.awt.Color
 
 /**
- * Builds the themed "nothing loaded" page shown in the browser before a real URL
- * is loaded (and when a load fails). Rendered as HTML with an inline SVG so it
- * fully controls the look and adapts to the current IDE theme.
+ * Builds the themed "home" page shown in the browser before a page is loaded and
+ * whenever a load fails. Rendered as HTML with an inline SVG so it fully controls
+ * the look and adapts to the current IDE theme.
  *
- * The empty state is intentionally minimal: just the illustration and a title.
- * The error variant adds a one-line note about which URL failed.
+ * Deliberately context-free: no URL, no error text. The same friendly view is
+ * shown for the initial empty state and for failed loads — a load failure isn't
+ * worth surfacing a cryptic browser error, and any assumption about the kind of
+ * page the user might be loading (a dev server, a specific port, …) would be
+ * presumptuous.
  */
 object WebBrowserPlaceholder {
 
-    fun html(targetUrl: String, errorText: String? = null): String {
+    fun html(): String {
         val bg = hex(UIUtil.getPanelBackground())
         val fg = hex(UIUtil.getLabelForeground())
         val muted = hex(UIUtil.getContextHelpForeground())
         val stroke = hex(blend(UIUtil.getLabelForeground(), UIUtil.getPanelBackground(), 0.55))
         val accent = "#3574F0"
-
-        val isError = errorText != null
-        val title = if (isError) "Couldn't reach the site" else "No page loaded yet"
-        val subtitle = if (isError) {
-            "<p class=\"sub\">${esc(errorText)}.<br/>Is your dev server running at <b>${esc(targetUrl)}</b>?</p>"
-        } else {
-            ""
-        }
 
         return """
 <!DOCTYPE html>
@@ -44,14 +39,21 @@ object WebBrowserPlaceholder {
   .wrap { text-align: center; padding: 24px; max-width: 460px; }
   .art { margin-bottom: 22px; }
   h1 { font-size: 18px; font-weight: 600; margin: 0; }
-  .sub { font-size: 13px; line-height: 1.5; color: $muted; margin: 10px 0 0; word-break: break-all; }
+  .sub { font-size: 13px; line-height: 1.5; color: $muted; margin: 10px 0 0; }
+  /* A very gentle breathing pulse on the globe makes the page feel alive
+     without being a distraction. */
+  .globe { animation: pulse 4s ease-in-out infinite; transform-origin: center; }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.75; }
+    50%      { opacity: 1.00; }
+  }
 </style>
 </head>
 <body>
   <div class="wrap">
     <div class="art">${svg(accent, stroke)}</div>
-    <h1>${esc(title)}</h1>
-    $subtitle
+    <h1>Embedded Web Browser</h1>
+    <p class="sub">Browse the web inside your IDE.</p>
   </div>
 </body>
 </html>
@@ -65,10 +67,12 @@ object WebBrowserPlaceholder {
   <circle cx="28" cy="35" r="2.8" fill="#FF5F57"/>
   <circle cx="38" cy="35" r="2.8" fill="#FEBC2E"/>
   <circle cx="48" cy="35" r="2.8" fill="#28C840"/>
-  <circle cx="66" cy="75" r="20" fill="none" stroke="$accent" stroke-width="2.8"/>
-  <ellipse cx="66" cy="75" rx="8.2" ry="20" fill="none" stroke="$accent" stroke-width="2.8"/>
-  <line x1="46" y1="75" x2="86" y2="75" stroke="$accent" stroke-width="2.8"/>
-  <line x1="66" y1="55" x2="66" y2="95" stroke="$accent" stroke-width="2.8" opacity="0.5"/>
+  <g class="globe" stroke="$accent" stroke-width="2.8" fill="none">
+    <circle cx="66" cy="75" r="20"/>
+    <ellipse cx="66" cy="75" rx="8.2" ry="20"/>
+    <line x1="46" y1="75" x2="86" y2="75"/>
+    <line x1="66" y1="55" x2="66" y2="95" opacity="0.5"/>
+  </g>
 </svg>
     """.trimIndent()
 
@@ -81,10 +85,4 @@ object WebBrowserPlaceholder {
         val bl = (a.blue * (1 - ratio) + b.blue * ratio).toInt()
         return Color(r.coerceIn(0, 255), g.coerceIn(0, 255), bl.coerceIn(0, 255))
     }
-
-    private fun esc(s: String): String =
-        s.replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace("\"", "&quot;")
 }

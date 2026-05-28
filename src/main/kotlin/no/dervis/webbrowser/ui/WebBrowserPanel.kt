@@ -102,9 +102,9 @@ class WebBrowserPanel(
                 vfsConnection?.disconnect()
             }
 
-            // Start on the themed SVG placeholder rather than auto-loading a URL
-            // (which would show Chromium's error page if the dev server is down).
-            showPlaceholder(null)
+            // Start on the themed SVG home page rather than auto-loading a URL
+            // (which would surface Chromium's error page if the target is down).
+            showPlaceholder()
 
             // Register with the controller so run-config triggers can drive this view;
             // this also picks up any URL queued before the view existed.
@@ -153,7 +153,9 @@ class WebBrowserPanel(
                 }
             }
 
-            // Replace Chromium's error page with our themed SVG placeholder.
+            // Replace Chromium's error page with our themed SVG home page —
+            // intentionally context-free, since the kind of page being loaded
+            // (any URL on any host on any port) shouldn't be guessed at.
             override fun onLoadError(
                 cefBrowser: CefBrowser?,
                 frame: CefFrame?,
@@ -163,9 +165,7 @@ class WebBrowserPanel(
             ) {
                 if (frame?.isMain != true) return
                 if (errorCode == CefLoadHandler.ErrorCode.ERR_ABORTED) return
-                SwingUtilities.invokeLater {
-                    showPlaceholder(errorText?.takeIf { it.isNotBlank() } ?: "Couldn't load $failedUrl")
-                }
+                SwingUtilities.invokeLater { showPlaceholder() }
             }
         }, b.cefBrowser)
     }
@@ -305,9 +305,9 @@ class WebBrowserPanel(
 
     // ---- Placeholder & navigation --------------------------------------------
 
-    /** Show the themed SVG empty state. [errorText] non-null renders the error variant. */
-    private fun showPlaceholder(errorText: String?) {
-        browser?.loadHTML(WebBrowserPlaceholder.html(WebBrowserSettings.getInstance().homeUrl, errorText))
+    /** Show the themed SVG home page — same view for first-open and load failures. */
+    private fun showPlaceholder() {
+        browser?.loadHTML(WebBrowserPlaceholder.html())
     }
 
     private fun navigate(raw: String) {
