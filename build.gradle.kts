@@ -1,8 +1,10 @@
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     kotlin("jvm") version "2.3.21"
     id("org.jetbrains.intellij.platform") version "2.16.0"
+    jacoco
 }
 
 group = "no.dervis.webbrowser"
@@ -41,6 +43,11 @@ dependencies {
         // JetBrains Plugin Verifier — used by the `verifyPlugin` Gradle task to
         // check binary compatibility against the IDE builds listed below.
         pluginVerifier()
+
+        // IntelliJ Platform test framework — gives us BasePlatformTestCase, light
+        // project fixtures, mockable services, etc. for tests that need a real
+        // Application/Project.
+        testFramework(TestFrameworkType.Platform)
     }
 
     // Arrow functional core (Either / Option / raise DSL). The Kotlin stdlib it
@@ -48,6 +55,55 @@ dependencies {
     // excluded to avoid bundling a duplicate.
     implementation("io.arrow-kt:arrow-core:2.2.2.1") {
         exclude(group = "org.jetbrains.kotlin")
+    }
+
+    // Unit-test stack: kotlin.test wired to JUnit 5 for the pure domain tests.
+    testImplementation(kotlin("test-junit5"))
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.11.4")
+
+    // JUnit 4 (which also exposes junit.framework.TestCase — the JUnit 3 superclass
+    // BasePlatformTestCase extends) plus the vintage engine so those JUnit 3/4-style
+    // platform tests run under the same JUnit Platform invocation as the JUnit 5 tests.
+    testImplementation("junit:junit:4.13.2")
+    testRuntimeOnly("org.junit.vintage:junit-vintage-engine:5.11.4")
+}
+
+// The IntelliJ platform test task uses `-Djava.system.class.loader=PathClassLoader`,
+// which bypasses java.lang.instrument and prevents the JaCoCo agent from seeing
+// any classes load — coverage is silently zero on every class. So:
+//   * `test` runs the IntelliJ-bound platform tests (no coverage).
+//   * `domainTest` runs the pure-Kotlin domain tests in a plain JVM where the
+//     agent works normally, and feeds the JaCoCo report.
+tasks.test {
+    useJUnitPlatform()
+    filter { excludeTestsMatching("no.dervis.webbrowser.domain.*") }
+}
+
+val domainTest by tasks.registering(Test::class) {
+    description = "Pure domain tests (no IntelliJ classloader) — JaCoCo measures coverage here."
+    group = "verification"
+    useJUnitPlatform()
+    filter { includeTestsMatching("no.dervis.webbrowser.domain.*") }
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.named("check") { dependsOn(domainTest) }
+
+jacoco {
+    // 0.8.13 adds experimental Java 25 support — required because the Gradle
+    // daemon and test JVM both run on JDK 25; older releases silently no-op on
+    // the newer JVM and the report comes back at 0% coverage.
+    toolVersion = "0.8.13"
+}
+
+tasks.jacocoTestReport {
+    dependsOn(domainTest)
+    executionData(domainTest.get())
+    reports {
+        xml.required = true
+        html.required = true
     }
 }
 
