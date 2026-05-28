@@ -37,6 +37,10 @@ if (!file(localIdePath).exists()) {
 dependencies {
     intellijPlatform {
         local(localIdePath)
+
+        // JetBrains Plugin Verifier — used by the `verifyPlugin` Gradle task to
+        // check binary compatibility against the IDE builds listed below.
+        pluginVerifier()
     }
 
     // Arrow functional core (Either / Option / raise DSL). The Kotlin stdlib it
@@ -54,18 +58,34 @@ intellijPlatform {
 
     pluginConfiguration {
         ideaVersion {
-            // 261 == 2026.1. untilBuild is set deliberately wide so the plugin
-            // keeps loading across future IDE upgrades (personal-use tradeoff).
+            // 261 == 2026.1. No untilBuild — the plugin stays loadable on all
+            // newer IDE versions; the JetBrains Plugin Verifier (configured
+            // below) is the actual guard against cross-version breakage.
             sinceBuild = "261"
-            untilBuild = "299.*"
+        }
+    }
+
+    // Configure the JetBrains Plugin Verifier targets. `recommended()` derives a
+    // sensible IDE set from the since/until-build range; trade in `ide(...)`
+    // entries below for an explicit list once we want tighter control. Run with:
+    //   ./gradlew verifyPlugin
+    // (Note: first run downloads the target IDE distributions — multi-GB; cached.)
+    pluginVerification {
+        ides {
+            recommended()
         }
     }
 }
 
 kotlin {
     compilerOptions {
-        // Target Java 21 bytecode: it runs on the IDE's JBR 25 and stays broadly
-        // compatible, while compiling fine with the JDK 24/25 on this machine.
+        // Target Java 21 bytecode: runs on the IDE's JBR 25 and stays broadly
+        // compatible, while compiling fine with JDK 21 or newer.
         jvmTarget = JvmTarget.JVM_21
+        // Use the JVM's native default-method dispatch for Java interface defaults
+        // instead of generating Kotlin synthetic forwarder methods. Keeps the
+        // bytecode clean and stops the JetBrains Plugin Verifier from reporting
+        // our classes as "overriding" inherited defaults they don't actually touch.
+        freeCompilerArgs.add("-jvm-default=no-compatibility")
     }
 }

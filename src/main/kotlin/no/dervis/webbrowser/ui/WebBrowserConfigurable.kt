@@ -17,12 +17,13 @@ import no.dervis.webbrowser.settings.WebBrowserProjectSettings
 import no.dervis.webbrowser.settings.WebBrowserSettings
 import javax.swing.JCheckBox
 import javax.swing.JComponent
+import javax.swing.JList
 import javax.swing.JPanel
 import javax.swing.JSpinner
 import javax.swing.SpinnerNumberModel
 
 /**
- * Settings page under Settings > Tools > IntelliJ-WebBrowser. Project-level so the
+ * Settings page under Settings > Tools > Embedded Web Browser. Project-level so the
  * reload-on-save folder and run configuration can be picked from this project.
  */
 class WebBrowserConfigurable(private val project: Project) : Configurable {
@@ -37,7 +38,7 @@ class WebBrowserConfigurable(private val project: Project) : Configurable {
     private var readinessCombo: ComboBox<ReadinessMode>? = null
     private var secondsSpinner: JSpinner? = null
 
-    override fun getDisplayName(): String = "IntelliJ-WebBrowser"
+    override fun getDisplayName(): String = "Embedded Web Browser"
 
     override fun createComponent(): JComponent {
         val app = WebBrowserSettings.getInstance()
@@ -69,7 +70,19 @@ class WebBrowserConfigurable(private val project: Project) : Configurable {
         val urlField = JBTextField(proj.openUrl, 40).also { openUrlField = it }
 
         val readyCombo = ComboBox(ReadinessMode.entries.toTypedArray()).also { readinessCombo = it }
-        readyCombo.renderer = SimpleListCellRenderer.create("") { it.displayName }
+        // Extend SimpleListCellRenderer rather than calling the deprecated
+        // `create(String, Function)` static factory.
+        readyCombo.renderer = object : SimpleListCellRenderer<ReadinessMode>() {
+            override fun customize(
+                list: JList<out ReadinessMode>,
+                value: ReadinessMode?,
+                index: Int,
+                selected: Boolean,
+                hasFocus: Boolean,
+            ) {
+                text = value?.displayName.orEmpty()
+            }
+        }
         readyCombo.setMinimumAndPreferredWidth(JBUI.scale(320))
         readyCombo.selectedItem = proj.readiness
 

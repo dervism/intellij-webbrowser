@@ -218,7 +218,7 @@ class WebBrowserPanel(
         val settings = WebBrowserSettings.getInstance()
 
         reloadOnSaveCheck.toolTipText =
-            "Reload when a watched file is saved. Set the folder & extensions in Settings → Tools → IntelliJ-WebBrowser."
+            "Reload when a watched file is saved. Set the folder & extensions in Settings → Tools → Embedded Web Browser."
         reloadOnSaveCheck.isSelected = settings.reloadOnSave
         reloadOnSaveCheck.addActionListener {
             val on = reloadOnSaveCheck.isSelected

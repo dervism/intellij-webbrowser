@@ -1,4 +1,4 @@
-# IntelliJ-WebBrowser
+# Embedded Web Browser
 
 An IntelliJ IDEA plugin that embeds a **Chromium-based web browser** (the IDE's
 bundled JCEF runtime) in a tool window — handy for previewing a local web dev
@@ -24,7 +24,7 @@ server right next to your code.
 - When a run configuration starts, open the tool window and navigate it to your app. Choose **which** configuration (or *Any*), the **URL** (blank = home), and **when** to open: *the URL is reachable* (polls the host:port until the server responds — the truest "after the app has loaded"; default), *after a fixed delay*, or *immediately on launch*.
 
 ### Configuration
-All options live under *Settings → Tools → IntelliJ-WebBrowser*, including the **home / dev-server URL** (default `http://localhost:3000`). Toggle states and the refresh interval persist between sessions.
+All options live under *Settings → Tools → Embedded Web Browser*, including the **home / dev-server URL** (default `http://localhost:3000`). Toggle states and the refresh interval persist between sessions.
 
 ## Requirements
 
@@ -62,7 +62,7 @@ Launch a sandbox IDE with the plugin loaded:
 ## Install
 
 **From the JetBrains Marketplace (recommended):** open *Settings → Plugins →
-Marketplace*, search for **IntelliJ-WebBrowser**, click **Install**, and restart
+Marketplace*, search for **Embedded Web Browser**, click **Install**, and restart
 the IDE. The **Web Browser** tool window then appears on the right tool-window bar.
 
 **From a local build (for testing an unreleased version):** *Settings → Plugins →

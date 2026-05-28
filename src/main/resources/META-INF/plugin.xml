@@ -1,13 +1,13 @@
 <idea-plugin>
     <id>no.dervis.webbrowser</id>
-    <name>IntelliJ-WebBrowser</name>
+    <name>Embedded Web Browser</name>
     <!-- Vendor / "Additional Information" on the Marketplace & plugin details panel.
          Update the url to your own repository or homepage before publishing. -->
     <vendor email="dervis@mansuroglu.net" url="https://github.com/dervism/intellij-webbrowser">Dervis Mansuroglu</vendor>
 
     <!-- OVERVIEW: shown as the Marketplace "Overview" tab and the plugin description. -->
     <description><![CDATA[
-        <p><b>IntelliJ-WebBrowser</b> embeds a Chromium-based web browser (the IDE's
+        <p><b>Embedded Web Browser</b> embeds a Chromium-based web browser (the IDE's
         bundled JCEF runtime) directly in a tool window, so you can preview a local
         web dev server right next to your code &mdash; no Alt&#8209;Tab required.</p>
 
@@ -29,7 +29,7 @@
         <h3>Getting started</h3>
         <p>Open the <b>Web Browser</b> tool window from the right tool-window bar, then set
         your dev-server URL, live-reload, and open-on-run options under
-        <b>Settings &gt; Tools &gt; IntelliJ-WebBrowser</b>.</p>
+        <b>Settings &gt; Tools &gt; Embedded Web Browser</b>.</p>
 
         <h3>Requirements</h3>
         <p>Requires a JCEF-enabled JetBrains Runtime (the default JBR). If JCEF is
@@ -77,7 +77,7 @@
         <projectConfigurable
             parentId="tools"
             id="no.dervis.webbrowser.settings"
-            displayName="IntelliJ-WebBrowser"
+            displayName="Embedded Web Browser"
             instance="no.dervis.webbrowser.ui.WebBrowserConfigurable"/>
     </extensions>
 

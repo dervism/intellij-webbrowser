@@ -1,0 +1,16 @@
+<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- browser window outline (fits the 36x26 rectangle design area with 2 px padding) -->
+  <rect x="3" y="7" width="34" height="26" rx="4" stroke="#6E6E70" stroke-width="2.2"/>
+  <!-- title-bar separator -->
+  <line x1="3" y1="14" x2="37" y2="14" stroke="#6E6E70" stroke-width="2.2"/>
+  <!-- traffic-light dots -->
+  <circle cx="7.5" cy="10.5" r="1.6" fill="#FF5F57"/>
+  <circle cx="12" cy="10.5" r="1.6" fill="#FEBC2E"/>
+  <circle cx="16.5" cy="10.5" r="1.6" fill="#28C840"/>
+  <!-- globe inside the browser, centered in the content area -->
+  <g stroke="#3574F0" stroke-width="2">
+    <circle cx="20" cy="23.5" r="6.5"/>
+    <ellipse cx="20" cy="23.5" rx="2.6" ry="6.5"/>
+    <line x1="13.5" y1="23.5" x2="26.5" y2="23.5"/>
+  </g>
+</svg>
