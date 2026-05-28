@@ -38,6 +38,7 @@ import org.cef.handler.CefLoadHandler
 import org.cef.handler.CefLoadHandlerAdapter
 import java.awt.BorderLayout
 import java.awt.FlowLayout
+import javax.swing.BoxLayout
 import javax.swing.Icon
 import javax.swing.JButton
 import javax.swing.JCheckBox
@@ -172,11 +173,16 @@ class WebBrowserPanel(
 
     // ---- Toolbar -------------------------------------------------------------
 
+    // Three stacked rows so the URL field gets its own line (full width) instead
+    // of being squeezed between the button groups and disappearing on narrow
+    // tool windows.
     private fun buildHeader(): JComponent =
-        JPanel(BorderLayout()).apply {
+        JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
             border = JBUI.Borders.empty(2)
-            add(buildNavRow(), BorderLayout.NORTH)
-            add(buildReloadRow(), BorderLayout.SOUTH)
+            add(buildNavRow())
+            add(buildUrlRow())
+            add(buildReloadRow())
         }
 
     private fun buildNavRow(): JComponent {
@@ -199,19 +205,33 @@ class WebBrowserPanel(
             addActionListener { showOpenInPopup(this) }
         }
 
-        urlField.addActionListener { navigate(urlField.text) }
-
         val nav = JPanel(FlowLayout(FlowLayout.LEFT, JBUI.scale(2), JBUI.scale(2))).apply {
             add(backButton); add(forwardButton); add(reloadButton); add(homeButton)
         }
         val right = JPanel(FlowLayout(FlowLayout.RIGHT, JBUI.scale(2), JBUI.scale(2))).apply {
             add(openInButton)
         }
-        return JPanel(BorderLayout()).apply {
-            add(nav, BorderLayout.WEST)
-            add(urlField, BorderLayout.CENTER)
-            add(right, BorderLayout.EAST)
-        }
+        return capHeight(
+            JPanel(BorderLayout()).apply {
+                add(nav, BorderLayout.WEST)
+                add(right, BorderLayout.EAST)
+            },
+        )
+    }
+
+    private fun buildUrlRow(): JComponent {
+        urlField.addActionListener { navigate(urlField.text) }
+        return capHeight(
+            JPanel(BorderLayout()).apply {
+                border = JBUI.Borders.empty(2, JBUI.scale(2))
+                add(urlField, BorderLayout.CENTER)
+            },
+        )
+    }
+
+    /** Keep BoxLayout from stretching a row vertically past its preferred height. */
+    private fun capHeight(panel: JPanel): JPanel = panel.apply {
+        maximumSize = java.awt.Dimension(Int.MAX_VALUE, preferredSize.height)
     }
 
     private fun buildReloadRow(): JComponent {
@@ -248,12 +268,14 @@ class WebBrowserPanel(
             if (autoRefreshCheck.isSelected) setAutoRefresh(true, s)
         }
 
-        return JPanel(FlowLayout(FlowLayout.LEFT, JBUI.scale(6), JBUI.scale(2))).apply {
-            add(reloadOnSaveCheck)
-            add(autoRefreshCheck)
-            add(secondsSpinner)
-            add(JBLabel("s"))
-        }
+        return capHeight(
+            JPanel(FlowLayout(FlowLayout.LEFT, JBUI.scale(6), JBUI.scale(2))).apply {
+                add(reloadOnSaveCheck)
+                add(autoRefreshCheck)
+                add(secondsSpinner)
+                add(JBLabel("s"))
+            },
+        )
     }
 
     private fun currentIntervalSeconds(): Int =

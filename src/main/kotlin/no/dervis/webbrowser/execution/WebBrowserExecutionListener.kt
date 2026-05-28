@@ -3,6 +3,7 @@ package no.dervis.webbrowser.execution
 import com.intellij.execution.ExecutionListener
 import com.intellij.execution.process.ProcessHandler
 import com.intellij.execution.runners.ExecutionEnvironment
+import com.intellij.openapi.diagnostic.thisLogger
 import no.dervis.webbrowser.settings.WebBrowserProjectSettings
 import no.dervis.webbrowser.settings.WebBrowserSettings
 
@@ -13,16 +14,30 @@ import no.dervis.webbrowser.settings.WebBrowserSettings
  */
 class WebBrowserExecutionListener : ExecutionListener {
 
+    private val log = thisLogger()
+
     override fun processStarted(executorId: String, env: ExecutionEnvironment, handler: ProcessHandler) {
         val project = env.project
         val settings = WebBrowserProjectSettings.getInstance(project)
+        val configName = env.runProfile.name
+
+        log.info("processStarted runProfile='$configName' executor='$executorId'")
 
         settings.openOnRunPolicy()
             .resolve(
-                startedConfigName = env.runProfile.name,
+                startedConfigName = configName,
                 requestedUrl = settings.openUrl,
                 fallbackUrl = WebBrowserSettings.getInstance().homeUrl,
             )
-            .onRight { request -> WebBrowserLauncher.scheduleOpen(project, request, handler) }
+            .fold(
+                ifLeft = { skip -> log.info("Not opening browser for '$configName': $skip") },
+                ifRight = { request ->
+                    log.info(
+                        "Scheduling browser open for '$configName' → ${request.url}, " +
+                            "${request.readiness} (wait ${request.waitSeconds}s)",
+                    )
+                    WebBrowserLauncher.scheduleOpen(project, request, handler)
+                },
+            )
     }
 }
