@@ -13,6 +13,7 @@ import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.FormBuilder
 import com.intellij.util.ui.JBUI
 import no.dervis.webbrowser.domain.ReadinessMode
+import no.dervis.webbrowser.domain.WebBrowserSettingsSnapshot
 import no.dervis.webbrowser.settings.WebBrowserProjectSettings
 import no.dervis.webbrowser.settings.WebBrowserSettings
 import javax.swing.JCheckBox
@@ -107,44 +108,15 @@ class WebBrowserConfigurable(private val project: Project) : Configurable {
             .panel
     }
 
-    override fun isModified(): Boolean {
-        val app = WebBrowserSettings.getInstance()
-        val proj = WebBrowserProjectSettings.getInstance(project)
-        return homeField?.text?.trim() != app.homeUrl ||
-            extField?.text?.trim() != app.watchExtensions ||
-            watchFolderField?.text?.trim() != proj.watchPath ||
-            openOnRunCheck?.isSelected != proj.openOnRun ||
-            selectedConfigName() != proj.runConfigName ||
-            openUrlField?.text?.trim() != proj.openUrl ||
-            selectedReadiness() != proj.readiness ||
-            (secondsSpinner?.value as? Int) != proj.readinessSeconds
-    }
+    // All three lifecycle methods route through immutable snapshots so the
+    // "what does the form have vs what's stored" comparison and projection are
+    // one-liners. The mapping back to the IntelliJ services is the only place
+    // that touches mutable state.
+    override fun isModified(): Boolean = readForm() != readStored()
 
-    override fun apply() {
-        val app = WebBrowserSettings.getInstance()
-        val proj = WebBrowserProjectSettings.getInstance(project)
-        homeField?.let { app.homeUrl = it.text.trim() }
-        extField?.let { app.watchExtensions = it.text.trim() }
-        watchFolderField?.let { proj.watchPath = it.text.trim() }
-        openOnRunCheck?.let { proj.openOnRun = it.isSelected }
-        proj.runConfigName = selectedConfigName()
-        openUrlField?.let { proj.openUrl = it.text.trim() }
-        proj.readiness = selectedReadiness()
-        (secondsSpinner?.value as? Int)?.let { proj.readinessSeconds = it }
-    }
+    override fun apply() = writeStored(readForm())
 
-    override fun reset() {
-        val app = WebBrowserSettings.getInstance()
-        val proj = WebBrowserProjectSettings.getInstance(project)
-        homeField?.text = app.homeUrl
-        extField?.text = app.watchExtensions
-        watchFolderField?.text = proj.watchPath
-        openOnRunCheck?.isSelected = proj.openOnRun
-        runConfigCombo?.selectedItem = if (proj.runConfigName.isBlank()) ANY_CONFIG else proj.runConfigName
-        openUrlField?.text = proj.openUrl
-        readinessCombo?.selectedItem = proj.readiness
-        secondsSpinner?.value = proj.readinessSeconds
-    }
+    override fun reset() = writeForm(readStored())
 
     override fun disposeUIResources() {
         homeField = null
@@ -155,6 +127,59 @@ class WebBrowserConfigurable(private val project: Project) : Configurable {
         openUrlField = null
         readinessCombo = null
         secondsSpinner = null
+    }
+
+    // ---- Snapshot read / write helpers --------------------------------------
+
+    private fun readStored(): WebBrowserSettingsSnapshot {
+        val app = WebBrowserSettings.getInstance()
+        val proj = WebBrowserProjectSettings.getInstance(project)
+        return WebBrowserSettingsSnapshot(
+            homeUrl = app.homeUrl,
+            watchExtensions = app.watchExtensions,
+            watchPath = proj.watchPath,
+            openOnRun = proj.openOnRun,
+            runConfigName = proj.runConfigName,
+            openUrl = proj.openUrl,
+            readiness = proj.readiness,
+            readinessSeconds = proj.readinessSeconds,
+        )
+    }
+
+    private fun readForm(): WebBrowserSettingsSnapshot = WebBrowserSettingsSnapshot(
+        homeUrl = homeField?.text?.trim().orEmpty(),
+        watchExtensions = extField?.text?.trim().orEmpty(),
+        watchPath = watchFolderField?.text?.trim().orEmpty(),
+        openOnRun = openOnRunCheck?.isSelected ?: false,
+        runConfigName = selectedConfigName(),
+        openUrl = openUrlField?.text?.trim().orEmpty(),
+        readiness = selectedReadiness(),
+        readinessSeconds = (secondsSpinner?.value as? Int) ?: WebBrowserProjectSettings.DEFAULT_WAIT_SECONDS,
+    )
+
+    private fun writeStored(snapshot: WebBrowserSettingsSnapshot) {
+        val app = WebBrowserSettings.getInstance()
+        val proj = WebBrowserProjectSettings.getInstance(project)
+        app.homeUrl = snapshot.homeUrl
+        app.watchExtensions = snapshot.watchExtensions
+        proj.watchPath = snapshot.watchPath
+        proj.openOnRun = snapshot.openOnRun
+        proj.runConfigName = snapshot.runConfigName
+        proj.openUrl = snapshot.openUrl
+        proj.readiness = snapshot.readiness
+        proj.readinessSeconds = snapshot.readinessSeconds
+    }
+
+    private fun writeForm(snapshot: WebBrowserSettingsSnapshot) {
+        homeField?.text = snapshot.homeUrl
+        extField?.text = snapshot.watchExtensions
+        watchFolderField?.text = snapshot.watchPath
+        openOnRunCheck?.isSelected = snapshot.openOnRun
+        runConfigCombo?.selectedItem =
+            if (snapshot.runConfigName.isBlank()) ANY_CONFIG else snapshot.runConfigName
+        openUrlField?.text = snapshot.openUrl
+        readinessCombo?.selectedItem = snapshot.readiness
+        secondsSpinner?.value = snapshot.readinessSeconds
     }
 
     private fun selectedConfigName(): String {

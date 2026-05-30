@@ -28,6 +28,7 @@ object WebBrowserPlaceholder {
 <html>
 <head>
 <meta charset="utf-8"/>
+<title>New Tab</title>
 <style>
   html, body { height: 100%; margin: 0; }
   body {

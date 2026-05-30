@@ -17,6 +17,7 @@ The plugin was purpose built for my own needs, and I also wanted to stay within 
 
 ### Browse
 - **Embedded browser** — a Chromium (JCEF) view in a right-dock **Web Browser** tool window, with back / forward / reload, an editable address bar, and **zoom in / out / reset**.
+- **Tabs** — open multiple pages side by side; `target="_blank"` links open in a new tab instead of escaping to an external window.
 - **Smart address bar** — typing a URL navigates; typing a phrase runs a Startpage search.
 - **Themed empty state** — a clean, theme-aware SVG screen before anything loads and when a page fails to load, in place of Chromium's raw error page.
 - **Right-click menu** — Chromium's standard context menu, with **View Page Source** routed through `view-source:` so it actually works.

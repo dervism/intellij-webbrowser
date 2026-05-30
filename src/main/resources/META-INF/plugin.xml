@@ -52,39 +52,38 @@
 
     <!-- WHAT'S NEW: shown as the Marketplace "What's New" / change-notes section. -->
     <change-notes><![CDATA[
-        <h3>0.3.0</h3>
+        <h3>0.2.8 – 0.4.3</h3>
+        <p>A series of releases focused on a richer browsing experience and a
+        tidier toolbar.</p>
+        <p><b>Tabs.</b> The tool window now supports multiple tabs. Open new
+        tabs from the <b>New Tab</b> button, close them with the
+        <code>×</code> on each tab, and links that would normally open in a
+        separate window (<code>target="_blank"</code>) now open as a new tab
+        inside the panel instead of escaping the IDE. Each tab keeps its own
+        URL, navigation history, and zoom level; switching tabs updates the
+        toolbar to match.</p>
+        <p><b>Zoom.</b> A <b>Zoom ▾</b> dropdown on the toolbar offers
+        <i>Zoom In</i>, <i>Zoom Out</i>, and <i>Reset Zoom</i>, with a
+        matching <b>Zoom ▸</b> submenu on the right-click context menu. Zoom
+        is per-tab and steps reliably in both directions.</p>
+        <p><b>Compact toolbar.</b> Back, forward, and reload are now
+        borderless icons that sit inside the URL field, so the address bar
+        stays usable even on narrow tool windows. A new
+        <b>Settings ▾</b> toggle collapses the secondary row (<i>Reload on
+        save</i>, <i>Auto-refresh</i>, <i>Zoom</i>, <i>Open in</i>) into a
+        single line that hides by default, and remembers your choice
+        between sessions.</p>
+        <p><b>Auto-refresh dropdown.</b> The auto-refresh interval is now a
+        compact dropdown of presets (1, 2, 3, 5, 10, 30, and 60 seconds)
+        instead of a free-form number field, freeing up room in the toolbar.
+        Any previously configured interval is rounded to the nearest preset.</p>
+        <p><b>Fixes.</b></p>
         <ul>
-            <li><b>Internal refactor for testability.</b> Pulled four pure
-            helpers out of the UI/execution layers into the domain:
-            <code>AddressBarFilter</code> (address-bar sync rule),
-            <code>ViewSourceTransform</code> (view-source target derivation),
-            <code>ZoomLevel</code> (clamp constants &amp; stepper) and
-            <code>LaunchSchedule</code> (sealed dispatch over the readiness mode).
-            Each is now covered by unit tests. No user-visible behaviour change.</li>
-        </ul>
-        <h3>0.2.9</h3>
-        <ul>
-            <li><b>Compact toolbar.</b> Back / forward / reload are now
-            borderless icons rendered <i>inside</i> the URL field on the left
-            edge, so they no longer crowd the row and the address bar stays
-            visible at every tool-window width.</li>
-            <li><b>Fix: zoom now actually accumulates.</b> JCEF's
-            <code>getZoomLevel()</code> returns an async-cached value, so the
-            previous "current + step" calculation was overwriting itself; the
-            zoom level is now tracked locally and applied on each step.</li>
-            <li><b>Zoom collapsed into one control.</b> A single <b>Zoom ▾</b>
-            dropdown on the toolbar with In / Out / Reset, plus a matching
-            <b>Zoom ▸</b> submenu on the right-click context menu.</li>
-        </ul>
-        <h3>0.2.8</h3>
-        <ul>
-            <li><b>New: zoom in / out / reset.</b> Three new buttons on the
-            toolbar adjust the page zoom in ~20% steps, clamped between
-            roughly 40% and 250%.</li>
-            <li><b>Fix: "View Page Source" right-click menu item now works.</b>
-            Chromium shows the item by default but the host application has to
-            handle the command; we now route it to Chromium's built-in
-            <code>view-source:</code> scheme.</li>
+            <li><i>View Page Source</i> from the right-click menu now works.</li>
+            <li>Placeholder and blank tabs are labelled <i>New Tab</i>
+            instead of an internal identifier.</li>
+            <li>Removed a stray bright frame that could appear around tab
+            content under some themes.</li>
         </ul>
         <h3>0.2.7</h3>
         <ul>

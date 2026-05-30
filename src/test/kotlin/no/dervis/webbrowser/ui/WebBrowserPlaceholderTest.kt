@@ -51,4 +51,15 @@ class WebBrowserPlaceholderTest : BasePlatformTestCase() {
         // Two consecutive calls under the same theme should produce identical HTML.
         assertEquals(WebBrowserPlaceholder.html(), WebBrowserPlaceholder.html())
     }
+
+    fun testHtmlDeclaresATitleSoTabStripsDontShowChromiumsSynthesisedUrl() {
+        // Without a <title> element, JCEF's loadHTML synthesises an internal
+        // pseudo-URL like "1908504379#url=about:blank" and surfaces it as the
+        // document title. Declaring our own keeps the tab strip readable.
+        val html = WebBrowserPlaceholder.html()
+        assertTrue(
+            "expected a <title> element in the placeholder HTML",
+            html.contains("<title>") && html.contains("</title>"),
+        )
+    }
 }

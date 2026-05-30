@@ -20,6 +20,7 @@ class WebBrowserSettings : PersistentStateComponent<WebBrowserSettings.State> {
         var watchExtensions: String = DEFAULT_WATCH_EXTENSIONS,
         var reloadOnSave: Boolean = false,
         var autoRefresh: Boolean = false,
+        var settingsPanelExpanded: Boolean = false,
     )
 
     private var state = State()
@@ -56,6 +57,13 @@ class WebBrowserSettings : PersistentStateComponent<WebBrowserSettings.State> {
         get() = state.autoRefresh
         set(value) {
             state.autoRefresh = value
+        }
+
+    /** Whether the collapsible settings row in the toolbar is currently expanded. */
+    var settingsPanelExpanded: Boolean
+        get() = state.settingsPanelExpanded
+        set(value) {
+            state.settingsPanelExpanded = value
         }
 
     override fun getState(): State = state
