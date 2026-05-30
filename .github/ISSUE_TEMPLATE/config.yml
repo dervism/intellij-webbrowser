@@ -1,0 +1,4 @@
+# Force users into one of the templates rather than a blank issue — keeps
+# triage costs low and ensures bug reports include the basics (IDE, plugin
+# version, JCEF availability) we always need.
+blank_issues_enabled: false

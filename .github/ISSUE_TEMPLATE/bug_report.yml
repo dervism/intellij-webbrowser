@@ -1,0 +1,96 @@
+name: Bug report
+description: Something in the Web Browser Panel plugin isn't working as expected.
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug! Please fill in as much of the
+        information below as you can — it makes the issue much faster to triage.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: A clear, concise description of the bug.
+      placeholder: When I click X, the Y panel does Z instead of W.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The shortest sequence of steps that triggers the bug.
+      placeholder: |
+        1. Open the Web Browser tool window
+        2. Load https://example.com
+        3. Right-click → View Page Source
+        4. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      placeholder: What you thought would happen.
+    validations:
+      required: true
+
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Plugin version
+      description: Find it under Settings → Plugins → Web Browser Panel.
+      placeholder: "0.4.3"
+    validations:
+      required: true
+
+  - type: input
+    id: ide
+    attributes:
+      label: IDE and version
+      description: e.g. IntelliJ IDEA Ultimate 2026.1, PyCharm 2025.3.
+      placeholder: "IntelliJ IDEA Ultimate 2026.1"
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: "macOS 15.3 / Windows 11 / Ubuntu 24.04"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: jcef
+    attributes:
+      label: Is the embedded browser (JCEF) available?
+      description: |
+        The tool window shows a notice when JCEF isn't available. If you see a
+        working browser at all, choose "Yes".
+      options:
+        - "Yes"
+        - "No — tool window shows the JCEF-unavailable notice"
+        - "Not sure"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: |
+        From the IDE: Help → Show Log in Finder / Explorer → `idea.log`. Paste
+        any stack traces or `WebBrowser` / `JCEF` lines around the time of the
+        bug. Feel free to truncate.
+      render: shell
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: Screenshots, screen recordings, related issues, workarounds you've tried.

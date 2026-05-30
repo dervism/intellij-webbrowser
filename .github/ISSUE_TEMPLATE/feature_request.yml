@@ -1,0 +1,40 @@
+name: Feature request
+description: Suggest an improvement or a new capability for the Web Browser Panel plugin.
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the suggestion! A short description of the *problem* you're
+        running into tends to be more useful than a fully-specified solution —
+        it leaves room to find the best fit for the plugin.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: The use case, workflow, or friction you're hitting today.
+      placeholder: When I'm doing X, I have to leave the IDE and Y because the plugin can't ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: How you imagine this could work in the UI / settings. Sketches and screenshots welcome.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other approaches you've thought about, or workarounds you currently use.
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: Links, references to similar features in other tools, prior art.
