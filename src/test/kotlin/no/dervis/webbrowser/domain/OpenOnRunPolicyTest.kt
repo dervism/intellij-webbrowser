@@ -103,4 +103,30 @@ class OpenOnRunPolicyTest {
             ifRight = { request -> assertEquals("http://localhost:3000", request.url.value) },
         )
     }
+
+    // ---- data-class component accessors (sanity check + 100% method coverage) ----
+
+    @Test
+    fun `data class exposes its constructor fields via property accessors`() {
+        val policy = OpenOnRunPolicy(
+            enabled = true,
+            runConfigName = "MyConfig",
+            readiness = ReadinessMode.AFTER_DELAY,
+            waitSeconds = 42,
+        )
+        assertTrue(policy.enabled)
+        assertEquals("MyConfig", policy.runConfigName)
+        assertEquals(ReadinessMode.AFTER_DELAY, policy.readiness)
+        assertEquals(42, policy.waitSeconds)
+    }
+
+    @Test
+    fun `data class equality is value-based`() {
+        val a = OpenOnRunPolicy(true, "x", ReadinessMode.ON_LAUNCH, 5)
+        val b = OpenOnRunPolicy(true, "x", ReadinessMode.ON_LAUNCH, 5)
+        val c = a.copy(waitSeconds = 6)
+        assertEquals(a, b)
+        assertEquals(a.hashCode(), b.hashCode())
+        assertTrue(a != c)
+    }
 }

@@ -52,6 +52,40 @@
 
     <!-- WHAT'S NEW: shown as the Marketplace "What's New" / change-notes section. -->
     <change-notes><![CDATA[
+        <h3>0.3.0</h3>
+        <ul>
+            <li><b>Internal refactor for testability.</b> Pulled four pure
+            helpers out of the UI/execution layers into the domain:
+            <code>AddressBarFilter</code> (address-bar sync rule),
+            <code>ViewSourceTransform</code> (view-source target derivation),
+            <code>ZoomLevel</code> (clamp constants &amp; stepper) and
+            <code>LaunchSchedule</code> (sealed dispatch over the readiness mode).
+            Each is now covered by unit tests. No user-visible behaviour change.</li>
+        </ul>
+        <h3>0.2.9</h3>
+        <ul>
+            <li><b>Compact toolbar.</b> Back / forward / reload are now
+            borderless icons rendered <i>inside</i> the URL field on the left
+            edge, so they no longer crowd the row and the address bar stays
+            visible at every tool-window width.</li>
+            <li><b>Fix: zoom now actually accumulates.</b> JCEF's
+            <code>getZoomLevel()</code> returns an async-cached value, so the
+            previous "current + step" calculation was overwriting itself; the
+            zoom level is now tracked locally and applied on each step.</li>
+            <li><b>Zoom collapsed into one control.</b> A single <b>Zoom ▾</b>
+            dropdown on the toolbar with In / Out / Reset, plus a matching
+            <b>Zoom ▸</b> submenu on the right-click context menu.</li>
+        </ul>
+        <h3>0.2.8</h3>
+        <ul>
+            <li><b>New: zoom in / out / reset.</b> Three new buttons on the
+            toolbar adjust the page zoom in ~20% steps, clamped between
+            roughly 40% and 250%.</li>
+            <li><b>Fix: "View Page Source" right-click menu item now works.</b>
+            Chromium shows the item by default but the host application has to
+            handle the command; we now route it to Chromium's built-in
+            <code>view-source:</code> scheme.</li>
+        </ul>
         <h3>0.2.7</h3>
         <ul>
             <li>Renamed the plugin to <b>Web Browser Panel</b> to avoid a

@@ -7,8 +7,8 @@ import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.AppExecutorUtil
 import no.dervis.webbrowser.WebBrowserController
+import no.dervis.webbrowser.domain.LaunchSchedule
 import no.dervis.webbrowser.domain.OpenRequest
-import no.dervis.webbrowser.domain.ReadinessMode
 import no.dervis.webbrowser.domain.Url
 import java.net.InetAddress
 import java.net.InetSocketAddress
@@ -27,19 +27,19 @@ object WebBrowserLauncher {
     private const val CONNECT_TIMEOUT_MS = 400
 
     fun scheduleOpen(project: Project, request: OpenRequest, handler: ProcessHandler) {
-        when (request.readiness) {
-            ReadinessMode.ON_LAUNCH ->
-                openLater(project, request.url)
+        when (val schedule = LaunchSchedule.from(request)) {
+            is LaunchSchedule.Immediate ->
+                openLater(project, schedule.url)
 
-            ReadinessMode.AFTER_DELAY ->
+            is LaunchSchedule.Delayed ->
                 AppExecutorUtil.getAppScheduledExecutorService().schedule(
-                    { openLater(project, request.url) },
-                    request.waitSeconds.toLong(),
+                    { openLater(project, schedule.url) },
+                    schedule.delaySeconds.toLong(),
                     TimeUnit.SECONDS,
                 )
 
-            ReadinessMode.WHEN_REACHABLE ->
-                pollThenOpen(project, request.url, request.waitSeconds, handler)
+            is LaunchSchedule.WhenReachable ->
+                pollThenOpen(project, schedule.url, schedule.timeoutSeconds, handler)
         }
     }
 

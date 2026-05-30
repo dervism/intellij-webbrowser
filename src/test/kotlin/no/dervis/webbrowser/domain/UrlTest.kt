@@ -147,4 +147,44 @@ class UrlTest {
             Url.fromAddressBar("  test  ").getOrNull()?.value,
         )
     }
+
+    // ---- additional edge cases ----
+
+    @Test
+    fun `parse preserves query string and hash fragment`() {
+        assertEquals(
+            "http://example.com/path?q=1&r=2#section",
+            Url.parse("example.com/path?q=1&r=2#section").getOrNull()?.value,
+        )
+    }
+
+    @Test
+    fun `fromAddressBar keeps query strings on URL-like inputs`() {
+        // The presence of `/` makes this URL-like; the `?` belongs to the URL,
+        // not to a search query.
+        assertEquals(
+            "http://example.com/?q=hello",
+            Url.fromAddressBar("example.com/?q=hello").getOrNull()?.value,
+        )
+    }
+
+    @Test
+    fun `port reports the explicit non-default port even on https`() {
+        assertEquals(8443, Url.parse("https://example.com:8443/x").getOrNull()?.port)
+    }
+
+    @Test
+    fun `fromAddressBar treats a dotted host with trailing slash as URL`() {
+        assertEquals(
+            "http://site.com/",
+            Url.fromAddressBar("site.com/").getOrNull()?.value,
+        )
+    }
+
+    @Test
+    fun `fromAddressBar leaves a single word with no port or slash as a search`() {
+        // sanity-check the "no signals → search" path one more time.
+        val result = Url.fromAddressBar("kotlin").getOrNull()?.value
+        assertEquals("https://www.startpage.com/do/search?q=kotlin", result)
+    }
 }
