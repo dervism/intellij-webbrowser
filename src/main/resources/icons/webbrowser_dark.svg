@@ -1,0 +1,10 @@
+<svg width="13" height="13" viewBox="0 0 13 13" xmlns="http://www.w3.org/2000/svg">
+  <!-- Dark-theme variant of the tool-window stripe icon. Uses the standard
+       IntelliJ icon foreground for dark themes (#AFB1B3) so it sits at the
+       same visual weight as the platform's own stripe icons. -->
+  <g fill="none" stroke="#AFB1B3" stroke-width="1">
+    <circle cx="6.5" cy="6.5" r="5.5"/>
+    <ellipse cx="6.5" cy="6.5" rx="2.4" ry="5.5"/>
+    <line x1="1" y1="6.5" x2="12" y2="6.5"/>
+  </g>
+</svg>

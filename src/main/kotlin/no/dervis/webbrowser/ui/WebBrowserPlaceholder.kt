@@ -52,7 +52,7 @@ object WebBrowserPlaceholder {
 <body>
   <div class="wrap">
     <div class="art">${svg(accent, stroke)}</div>
-    <h1>Embedded Web Browser</h1>
+    <h1>Web Browser Panel</h1>
     <p class="sub">Browse the web inside your IDE.</p>
   </div>
 </body>

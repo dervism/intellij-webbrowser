@@ -1,4 +1,4 @@
-# Embedded Web Browser
+# Web Browser Panel
 
 An IntelliJ IDEA plugin that embeds a **Chromium-based web browser** (the IDE's
 bundled JCEF runtime) in a tool window — handy for previewing a local web dev
@@ -8,6 +8,10 @@ server right next to your code.
 > doesn't share your everyday browser's profile, extensions, or bookmarks. When you
 > need those, the **Open in…** button hands the current page to your system default
 > browser, or any browser configured under Settings → Tools → Web Browsers.
+
+## Why another web browser plugin?
+
+The plugin was purpose built for my own needs, and I also wanted to stay within my editor while coding. The plugin watches selected file types and automatically reloads the webpage directly inside the web browser panel if a file is saved. The panel is also automatically viewed when a run configuration has been ran by the user.
 
 ## Features
 
@@ -24,7 +28,7 @@ server right next to your code.
 - When a run configuration starts, open the tool window and navigate it to your app. Choose **which** configuration (or *Any*), the **URL** (blank = home), and **when** to open: *the URL is reachable* (polls the host:port until the server responds — the truest "after the app has loaded"; default), *after a fixed delay*, or *immediately on launch*.
 
 ### Configuration
-All options live under *Settings → Tools → Embedded Web Browser*, including the **home / dev-server URL** (default `http://localhost:3000`). Toggle states and the refresh interval persist between sessions.
+All options live under *Settings → Tools → Web Browser Panel*, including the **home / dev-server URL** (default `http://localhost:3000`). Toggle states and the refresh interval persist between sessions.
 
 ## Requirements
 
@@ -62,7 +66,7 @@ Launch a sandbox IDE with the plugin loaded:
 ## Install
 
 **From the JetBrains Marketplace (recommended):** open *Settings → Plugins →
-Marketplace*, search for **Embedded Web Browser**, click **Install**, and restart
+Marketplace*, search for **Web Browser Panel**, click **Install**, and restart
 the IDE. The **Web Browser** tool window then appears on the right tool-window bar.
 
 **From a local build (for testing an unreleased version):** *Settings → Plugins →

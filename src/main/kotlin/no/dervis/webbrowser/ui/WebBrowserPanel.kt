@@ -91,6 +91,14 @@ class WebBrowserPanel(
             val b = JBCefBrowser.createBuilder().build()
             Disposer.register(parentDisposable, b)
             browser = b
+            // JBCefBrowser.getBackgroundColor() returns JBColor.background() —
+            // i.e. the IDE theme's panel colour — and that's what's painted
+            // behind transparent <body> regions on the JCEF canvas. On a dark
+            // theme that's dark grey, which makes minimal pages (the Astro
+            // starter, blank HTML…) read as dark text on a dark canvas. Force
+            // an opaque white wrapper so the canvas paints onto white.
+            b.component.background = java.awt.Color.WHITE
+            b.component.isOpaque = true
             urlField.text = settings.homeUrl
 
             wireHandlers(b)
@@ -168,6 +176,22 @@ class WebBrowserPanel(
                 if (errorCode == CefLoadHandler.ErrorCode.ERR_ABORTED) return
                 SwingUtilities.invokeLater { showPlaceholder() }
             }
+
+            // The JCEF canvas inherits the IDE's dark theme. Pages that don't
+            // declare a `color-scheme` end up rendering with a dark canvas, so
+            // anything that just paints dark text on a transparent <body>
+            // (a minimal Astro/Vite/HTML starter, …) becomes unreadable. For
+            // those pages we set `color-scheme: light` so the canvas, form
+            // controls and scrollbars use light defaults — matching what a
+            // normal external browser does. Pages that opt into dark mode
+            // (color-scheme: dark, or dark light) are left alone, and we skip
+            // data:/about: URLs so our SVG home page isn't touched.
+            override fun onLoadEnd(cefBrowser: CefBrowser?, frame: CefFrame?, httpStatusCode: Int) {
+                if (frame?.isMain != true) return
+                val url = cefBrowser?.url.orEmpty()
+                if (url.startsWith("data:") || url.startsWith("about:")) return
+                frame.executeJavaScript(FORCE_LIGHT_FOR_UNTHEMED_JS, url, 0)
+            }
         }, b.cefBrowser)
     }
 
@@ -238,7 +262,7 @@ class WebBrowserPanel(
         val settings = WebBrowserSettings.getInstance()
 
         reloadOnSaveCheck.toolTipText =
-            "Reload when a watched file is saved. Set the folder & extensions in Settings → Tools → Embedded Web Browser."
+            "Reload when a watched file is saved. Set the folder & extensions in Settings → Tools → Web Browser Panel."
         reloadOnSaveCheck.isSelected = settings.reloadOnSave
         reloadOnSaveCheck.addActionListener {
             val on = reloadOnSaveCheck.isSelected
@@ -333,7 +357,9 @@ class WebBrowserPanel(
     }
 
     private fun navigate(raw: String) {
-        Url.parse(raw).onSome(::load)
+        // Address-bar semantics: URL-like inputs go to the URL, everything else
+        // becomes a Startpage search for the verbatim text.
+        Url.fromAddressBar(raw).onSome(::load)
     }
 
     private fun showOpenInPopup(anchor: JComponent) {
@@ -350,8 +376,13 @@ class WebBrowserPanel(
     }
 
     private fun openExternally(externalBrowser: WebBrowser?) {
+        // Use the same address-bar interpretation as Enter, so if the user
+        // typed a search query and hit "Open in…", the external browser also
+        // gets the Startpage URL.
         val home = WebBrowserSettings.getInstance().homeUrl
-        val url = Url.parse(urlField.text).getOrNull() ?: Url.parse(home).getOrNull() ?: return
+        val url = Url.fromAddressBar(urlField.text).getOrNull()
+            ?: Url.parse(home).getOrNull()
+            ?: return
         service<BrowserLauncher>().browse(url.value, externalBrowser, project)
     }
 
@@ -365,5 +396,27 @@ class WebBrowserPanel(
 
     private companion object {
         const val RELOAD_DEBOUNCE_MS = 250
+
+        // After each main-frame load: if the page didn't opt into a color
+        // scheme of its own (no `color-scheme` on <html>, no meta tag), set
+        // `color-scheme: light` AND, when the body is transparent, paint it
+        // white. The latter is what actually defeats the dark JCEF canvas
+        // showing through on minimal pages (Astro starter, blank HTML, etc.).
+        // No-op on pages that already specify a scheme or a body background.
+        private val FORCE_LIGHT_FOR_UNTHEMED_JS = """
+            (function () {
+              var root = document.documentElement;
+              var body = document.body;
+              if (!root || !body) return;
+              var declared = (root.style.colorScheme || '').trim() ||
+                             (getComputedStyle(root).colorScheme || '').trim();
+              if (declared && declared !== 'normal') return;
+              root.style.colorScheme = 'light';
+              var bg = getComputedStyle(body).backgroundColor;
+              if (bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent' || !bg) {
+                body.style.backgroundColor = 'white';
+              }
+            })();
+        """.trimIndent()
     }
 }

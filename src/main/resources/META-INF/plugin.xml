@@ -1,13 +1,13 @@
 <idea-plugin>
     <id>no.dervis.webbrowser</id>
-    <name>Embedded Web Browser</name>
+    <name>Web Browser Panel</name>
     <!-- Vendor / "Additional Information" on the Marketplace & plugin details panel.
          Update the url to your own repository or homepage before publishing. -->
     <vendor email="dervis@mansuroglu.net" url="https://github.com/dervism/intellij-webbrowser">Dervis Mansuroglu</vendor>
 
     <!-- OVERVIEW: shown as the Marketplace "Overview" tab and the plugin description. -->
     <description><![CDATA[
-        <p><b>Embedded Web Browser</b> embeds a Chromium-based web browser (the IDE's
+        <p><b>Web Browser Panel</b> embeds a Chromium-based web browser (the IDE's
         bundled JCEF runtime) directly in a tool window, so you can preview a local
         web dev server right next to your code &mdash; no Alt&#8209;Tab required.</p>
 
@@ -29,7 +29,7 @@
         <h3>Getting started</h3>
         <p>Open the <b>Web Browser</b> tool window from the right tool-window bar, then set
         your dev-server URL, live-reload, and open-on-run options under
-        <b>Settings &gt; Tools &gt; Embedded Web Browser</b>.</p>
+        <b>Settings &gt; Tools &gt; Web Browser Panel</b>.</p>
 
         <h3>Requirements</h3>
         <p>Requires a JCEF-enabled JetBrains Runtime (the default JBR). If JCEF is
@@ -52,6 +52,52 @@
 
     <!-- WHAT'S NEW: shown as the Marketplace "What's New" / change-notes section. -->
     <change-notes><![CDATA[
+        <h3>0.2.7</h3>
+        <ul>
+            <li>Renamed the plugin to <b>Web Browser Panel</b> to avoid a
+            Marketplace name collision. Plugin id, settings, and behaviour are
+            unchanged.</li>
+        </ul>
+        <h3>0.2.6</h3>
+        <ul>
+            <li><b>Smart address bar:</b> typing a search phrase (e.g.
+            <code>what is rust</code>) and pressing Enter now runs a
+            <a href="https://www.startpage.com/">Startpage</a> search instead of
+            trying to load it as a URL. URL-like inputs (with a scheme, a
+            <code>/</code>, a dot, <code>localhost</code>, an IP, or
+            <code>host:port</code>) still load normally. The same routing
+            applies when you use <b>Open in&hellip;</b>.</li>
+        </ul>
+        <h3>0.2.5</h3>
+        <ul>
+            <li><b>Fix (real one): minimal pages no longer render dark.</b>
+            The previous 0.2.4 attempt set <code>color-scheme: light</code>
+            via JS after the page rendered, which Chromium ignored for the
+            already-painted canvas. The browser's Swing wrapper is now forced
+            opaque white, and untheme pages additionally get a white
+            <code>body</code> background. Pages that opt into a color scheme
+            of their own (<code>color-scheme: dark</code> / <code>dark light</code>)
+            are still left alone.</li>
+        </ul>
+        <h3>0.2.4</h3>
+        <ul>
+            <li><b>Fix: dark canvas on minimal pages.</b> The embedded JCEF
+            browser used to inherit the IDE's dark theme as its canvas, so
+            pages that didn't declare a <code>color-scheme</code> (a minimal
+            Astro/Vite starter, a stripped-down HTML page, …) rendered dark
+            text on a dark background and were unreadable. The plugin now
+            sets <code>color-scheme: light</code> on the root element of any
+            page that doesn't opt into a scheme of its own; pages that
+            intentionally support dark mode (<code>dark</code> or
+            <code>dark light</code>) are left alone.</li>
+        </ul>
+        <h3>0.2.3</h3>
+        <ul>
+            <li>Brighter tool-window stripe icon on dark themes (added a
+            <code>_dark.svg</code> variant using the standard IntelliJ icon
+            foreground so it no longer reads as washed-out next to the
+            platform's own icons).</li>
+        </ul>
         <h3>0.2.2</h3>
         <ul>
             <li><b>Fix: "Open browser on run" now actually fires.</b> The
@@ -102,7 +148,7 @@
         <projectConfigurable
             parentId="tools"
             id="no.dervis.webbrowser.settings"
-            displayName="Embedded Web Browser"
+            displayName="Web Browser Panel"
             instance="no.dervis.webbrowser.ui.WebBrowserConfigurable"/>
     </extensions>
 
