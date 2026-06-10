@@ -9,8 +9,10 @@ class WebBrowserSettingsSnapshotTest {
 
     private val sample = WebBrowserSettingsSnapshot(
         homeUrl = "http://localhost:3000",
+        projectHomeUrl = "http://localhost:5173",
         watchExtensions = "html,css,ts",
         watchPath = "/p/src",
+        watchPatterns = "",
         openOnRun = true,
         runConfigName = "dev",
         openUrl = "",
@@ -30,8 +32,10 @@ class WebBrowserSettingsSnapshotTest {
         // Exhaustive single-field diff — this is the whole point of using the
         // snapshot for isModified.
         assertNotEquals(sample, sample.copy(homeUrl = "http://localhost:4321"))
+        assertNotEquals(sample, sample.copy(projectHomeUrl = "http://localhost:9999"))
         assertNotEquals(sample, sample.copy(watchExtensions = "vue"))
         assertNotEquals(sample, sample.copy(watchPath = ""))
+        assertNotEquals(sample, sample.copy(watchPatterns = "/p/src/**/*.ts"))
         assertNotEquals(sample, sample.copy(openOnRun = false))
         assertNotEquals(sample, sample.copy(runConfigName = "build"))
         assertNotEquals(sample, sample.copy(openUrl = "http://x"))
@@ -47,8 +51,10 @@ class WebBrowserSettingsSnapshotTest {
     @Test
     fun `accessors expose every constructor field`() {
         assertEquals("http://localhost:3000", sample.homeUrl)
+        assertEquals("http://localhost:5173", sample.projectHomeUrl)
         assertEquals("html,css,ts", sample.watchExtensions)
         assertEquals("/p/src", sample.watchPath)
+        assertEquals("", sample.watchPatterns)
         assertTrue(sample.openOnRun)
         assertEquals("dev", sample.runConfigName)
         assertEquals("", sample.openUrl)

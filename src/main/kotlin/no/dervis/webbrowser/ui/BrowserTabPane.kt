@@ -4,6 +4,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.jcef.JBCefBrowser
 import no.dervis.webbrowser.domain.AddressBarFilter
+import no.dervis.webbrowser.domain.ConsoleMessage
 import no.dervis.webbrowser.domain.TabId
 import no.dervis.webbrowser.domain.Url
 import no.dervis.webbrowser.domain.ViewSourceTransform
@@ -38,7 +39,7 @@ internal class BrowserTabPane(
     /** Hooks back into the panel. All called on the EDT. */
     interface Callbacks {
         fun onAddressChange(id: TabId, displayableUrl: String)
-        fun onLoadingStateChange(id: TabId, canGoBack: Boolean, canGoForward: Boolean)
+        fun onLoadingStateChange(id: TabId, canGoBack: Boolean, canGoForward: Boolean, isLoading: Boolean)
         fun onLoadError(id: TabId)
         fun onTitleChange(id: TabId, title: String)
         fun onPopupRequested(parent: TabId, url: Url)
@@ -49,6 +50,8 @@ internal class BrowserTabPane(
          * without disturbing the parent tab's history.
          */
         fun onViewSourceRequested(parent: TabId, sourceUrl: String)
+        /** A new `window.console` line fired in this tab. */
+        fun onConsoleMessage(id: TabId, message: ConsoleMessage)
     }
 
     val browser: JBCefBrowser = JBCefBrowser.createBuilder().build()
@@ -56,6 +59,7 @@ internal class BrowserTabPane(
 
     var canGoBack: Boolean = false; private set
     var canGoForward: Boolean = false; private set
+    var isLoading: Boolean = false; private set
     var zoomLevel: Double = ZoomLevel.DEFAULT; private set
 
     init {
@@ -78,7 +82,14 @@ internal class BrowserTabPane(
     fun goBack() { browser.cefBrowser.goBack() }
     fun goForward() { browser.cefBrowser.goForward() }
     fun reload() { browser.cefBrowser.reload() }
+    /** Reload bypassing the disk cache — equivalent to Chrome's Ctrl/Cmd+Shift+R. */
+    fun reloadIgnoreCache() { browser.cefBrowser.reloadIgnoreCache() }
+    /** Stop the current load (no-op if the page is already idle). */
+    fun stopLoad() { browser.cefBrowser.stopLoad() }
     fun currentUrl(): String = browser.cefBrowser.url.orEmpty()
+
+    /** Open Chromium DevTools in its standard separate window. */
+    fun openDevTools() { browser.openDevtools() }
 
     fun adjustZoom(delta: Double) {
         zoomLevel = ZoomLevel.next(zoomLevel, delta)
@@ -90,6 +101,28 @@ internal class BrowserTabPane(
         browser.cefBrowser.zoomLevel = ZoomLevel.DEFAULT
     }
 
+    /** Apply an absolute zoom level without going through [adjustZoom]'s stepper. */
+    fun setZoom(level: Double) {
+        zoomLevel = level
+        browser.cefBrowser.zoomLevel = level
+    }
+
+    // ---- In-page find ---------------------------------------------------------
+
+    /** Start or continue a find. Forward = true searches downward, false = upward. */
+    fun find(query: String, forward: Boolean = true, matchCase: Boolean = false, findNext: Boolean = false) {
+        if (query.isEmpty()) {
+            stopFind()
+            return
+        }
+        browser.cefBrowser.find(query, forward, matchCase, findNext)
+    }
+
+    /** Clear highlights and reset the active-match index. */
+    fun stopFind() {
+        browser.cefBrowser.stopFinding(true)
+    }
+
     // ---- Handler wiring ------------------------------------------------------
 
     private fun wireHandlers() {
@@ -99,6 +132,34 @@ internal class BrowserTabPane(
                     SwingUtilities.invokeLater { callbacks.onAddressChange(id, shown) }
                 }
             }
+            override fun onConsoleMessage(
+                cefBrowser: CefBrowser?,
+                level: org.cef.CefSettings.LogSeverity?,
+                message: String?,
+                source: String?,
+                line: Int,
+            ): Boolean {
+                // Map CEF's LogSeverity enum to our int-based domain factory.
+                // (Java enums have an ordinal we can use rather than depending
+                //  on the exact constant set.)
+                val severity = when (level) {
+                    org.cef.CefSettings.LogSeverity.LOGSEVERITY_VERBOSE -> 0
+                    org.cef.CefSettings.LogSeverity.LOGSEVERITY_INFO -> 2
+                    org.cef.CefSettings.LogSeverity.LOGSEVERITY_WARNING -> 3
+                    org.cef.CefSettings.LogSeverity.LOGSEVERITY_ERROR -> 4
+                    org.cef.CefSettings.LogSeverity.LOGSEVERITY_FATAL -> 5
+                    else -> 2
+                }
+                val msg = ConsoleMessage(
+                    level = ConsoleMessage.levelFor(severity),
+                    text = message.orEmpty(),
+                    source = source.orEmpty(),
+                    line = line,
+                )
+                SwingUtilities.invokeLater { callbacks.onConsoleMessage(id, msg) }
+                return false // don't suppress Chromium's own logging
+            }
+
             override fun onTitleChange(cefBrowser: CefBrowser?, title: String?) {
                 // JCEF synthesises an internal pseudo-URL as the "title" when
                 // loadHTML(...) is used on a page without a <title> tag — that
@@ -127,7 +188,8 @@ internal class BrowserTabPane(
                 SwingUtilities.invokeLater {
                     canGoBack = backAvailable
                     canGoForward = forwardAvailable
-                    callbacks.onLoadingStateChange(id, backAvailable, forwardAvailable)
+                    this@BrowserTabPane.isLoading = isLoading
+                    callbacks.onLoadingStateChange(id, backAvailable, forwardAvailable, isLoading)
                 }
             }
 
@@ -165,6 +227,7 @@ internal class BrowserTabPane(
                 submenu.addItem(CTX_ZOOM_IN, "Zoom In")
                 submenu.addItem(CTX_ZOOM_OUT, "Zoom Out")
                 submenu.addItem(CTX_ZOOM_RESET, "Reset Zoom")
+                model.addItem(CTX_DEVTOOLS, "Open DevTools")
             }
 
             override fun onContextMenuCommand(
@@ -191,9 +254,14 @@ internal class BrowserTabPane(
                 CTX_ZOOM_IN -> { SwingUtilities.invokeLater { adjustZoom(+ZoomLevel.STEP) }; true }
                 CTX_ZOOM_OUT -> { SwingUtilities.invokeLater { adjustZoom(-ZoomLevel.STEP) }; true }
                 CTX_ZOOM_RESET -> { SwingUtilities.invokeLater { resetZoom() }; true }
+                CTX_DEVTOOLS -> { SwingUtilities.invokeLater { openDevTools() }; true }
                 else -> false
             }
         }, browser.cefBrowser)
+
+        // (Find-in-page state lives entirely in Chromium — this JCEF version
+        // doesn't expose a CefFindHandler, so we drive find()/stopFinding()
+        // without surfacing a live match count to the toolbar.)
 
         // THE tabs hook: intercept target="_blank" / window.open() popups and
         // hand the URL to the panel so it can spawn a real in-IDE tab instead
@@ -223,6 +291,7 @@ internal class BrowserTabPane(
         const val CTX_ZOOM_IN = CefMenuModel.MenuId.MENU_ID_USER_FIRST + 2
         const val CTX_ZOOM_OUT = CefMenuModel.MenuId.MENU_ID_USER_FIRST + 3
         const val CTX_ZOOM_RESET = CefMenuModel.MenuId.MENU_ID_USER_FIRST + 4
+        const val CTX_DEVTOOLS = CefMenuModel.MenuId.MENU_ID_USER_FIRST + 5
 
         // Force `color-scheme: light` on pages that don't declare one, and a
         // white body background when the body is transparent. Same JS the old

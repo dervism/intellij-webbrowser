@@ -118,6 +118,129 @@ class BrowserTabsStateTest {
         assertFalse(state.contains(c))
     }
 
+    // ---- reorder -------------------------------------------------------------
+
+    @Test
+    fun `reorder moves a tab forward in the list`() {
+        val state = BrowserTabsState.EMPTY.open(a).open(b).open(c) // [a, b, c]
+        val moved = state.reorder(0, 2)
+        assertEquals(listOf(b, c, a), moved.tabs)
+        assertEquals(c, moved.activeId) // active id untouched
+    }
+
+    @Test
+    fun `reorder moves a tab backward in the list`() {
+        val state = BrowserTabsState.EMPTY.open(a).open(b).open(c) // [a, b, c]
+        val moved = state.reorder(2, 0)
+        assertEquals(listOf(c, a, b), moved.tabs)
+    }
+
+    @Test
+    fun `reorder with same index is a no-op`() {
+        val state = BrowserTabsState.EMPTY.open(a).open(b)
+        assertEquals(state, state.reorder(1, 1))
+    }
+
+    @Test
+    fun `reorder clamps out-of-range indices`() {
+        val state = BrowserTabsState.EMPTY.open(a).open(b).open(c)
+        // -5 → 0, 99 → 2: equivalent to reorder(0, 2)
+        val moved = state.reorder(-5, 99)
+        assertEquals(listOf(b, c, a), moved.tabs)
+    }
+
+    @Test
+    fun `reorder on empty state is a no-op`() {
+        assertEquals(BrowserTabsState.EMPTY, BrowserTabsState.EMPTY.reorder(0, 1))
+    }
+
+    // ---- reorderedTo ---------------------------------------------------------
+
+    @Test
+    fun `reorderedTo applies a full permutation`() {
+        val state = BrowserTabsState.EMPTY.open(a).open(b).open(c) // [a, b, c], active c
+        val moved = state.reorderedTo(listOf(c, a, b))
+        assertEquals(listOf(c, a, b), moved.tabs)
+        assertEquals(c, moved.activeId) // active + pins preserved
+    }
+
+    @Test
+    fun `reorderedTo ignores unknown ids and appends missing ones`() {
+        val state = BrowserTabsState.EMPTY.open(a).open(b).open(c)
+        // d is unknown; c omitted → c appended after the given order.
+        val moved = state.reorderedTo(listOf(b, TabId(99), a))
+        assertEquals(listOf(b, a, c), moved.tabs)
+    }
+
+    @Test
+    fun `reorderedTo with the same order returns the same instance`() {
+        val state = BrowserTabsState.EMPTY.open(a).open(b)
+        assertEquals(state, state.reorderedTo(listOf(a, b)))
+    }
+
+    @Test
+    fun `reorderedTo on empty state is a no-op`() {
+        assertEquals(BrowserTabsState.EMPTY, BrowserTabsState.EMPTY.reorderedTo(listOf(a)))
+    }
+
+    // ---- pin / unpin / isPinned ----------------------------------------------
+
+    @Test
+    fun `pin marks a tab as pinned`() {
+        val state = BrowserTabsState.EMPTY.open(a).open(b).pin(a)
+        assertTrue(state.isPinned(a))
+        assertFalse(state.isPinned(b))
+    }
+
+    @Test
+    fun `pin on a non-existent tab is a no-op`() {
+        val state = BrowserTabsState.EMPTY.open(a).pin(c)
+        assertFalse(state.isPinned(c))
+        assertTrue(state.pinned.isEmpty())
+    }
+
+    @Test
+    fun `unpin removes the pin`() {
+        val state = BrowserTabsState.EMPTY.open(a).pin(a).unpin(a)
+        assertFalse(state.isPinned(a))
+    }
+
+    @Test
+    fun `close drops the pin for the closed tab`() {
+        val state = BrowserTabsState.EMPTY.open(a).open(b).pin(a).close(a)
+        assertFalse(state.isPinned(a))
+        assertEquals(setOf<TabId>(), state.pinned)
+    }
+
+    // ---- activateNext / activatePrevious -------------------------------------
+
+    @Test
+    fun `activateNext wraps from the last tab back to the first`() {
+        val state = BrowserTabsState.EMPTY.open(a).open(b).open(c) // active: c
+        val next = state.activateNext()
+        assertEquals(a, next.activeId)
+    }
+
+    @Test
+    fun `activatePrevious wraps from the first tab to the last`() {
+        val state = BrowserTabsState.EMPTY.open(a).open(b).open(c).activate(a)
+        val prev = state.activatePrevious()
+        assertEquals(c, prev.activeId)
+    }
+
+    @Test
+    fun `activateNext advances by one for normal cases`() {
+        val state = BrowserTabsState.EMPTY.open(a).open(b).open(c).activate(a)
+        assertEquals(b, state.activateNext().activeId)
+    }
+
+    @Test
+    fun `activateNext is a no-op when there is fewer than two tabs`() {
+        assertEquals(BrowserTabsState.EMPTY, BrowserTabsState.EMPTY.activateNext())
+        val single = BrowserTabsState.withInitial(a)
+        assertEquals(single, single.activateNext())
+    }
+
     // ---- immutability sanity --------------------------------------------------
 
     @Test

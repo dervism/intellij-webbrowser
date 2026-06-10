@@ -14,8 +14,10 @@ package no.dervis.webbrowser.domain
  */
 data class WebBrowserSettingsSnapshot(
     val homeUrl: String,
+    val projectHomeUrl: String,
     val watchExtensions: String,
     val watchPath: String,
+    val watchPatterns: String,
     val openOnRun: Boolean,
     val runConfigName: String,
     val openUrl: String,

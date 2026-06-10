@@ -17,21 +17,47 @@ The plugin was purpose built for my own needs, and I also wanted to stay within 
 
 ### Browse
 - **Embedded browser** — a Chromium (JCEF) view in a right-dock **Web Browser** tool window, with back / forward / reload, an editable address bar, and **zoom in / out / reset**.
-- **Tabs** — open multiple pages side by side; `target="_blank"` links open in a new tab instead of escaping to an external window.
-- **Smart address bar** — typing a URL navigates; typing a phrase runs a Startpage search.
+- **Tabs** — open multiple pages side by side; `target="_blank"` links open in a new tab instead of escaping to an external window. Drag tabs to reorder, **pin** important ones to keep them across restarts, right-click for *Pin / Close / Close Other*, and use **Ctrl+Tab / Ctrl+Shift+Tab** to cycle. Closed tabs can be reopened, and your full tab session is restored when the project re-opens.
+- **Smart address bar** — typing a URL navigates; typing a phrase runs a Startpage search. Clicking into the field selects the whole address, so you can immediately retype it. **History-backed autocomplete** suggests previously visited URLs from this project as you type (arrow keys / Enter / Esc); the history can be cleared from settings.
+- **Find in page** — Ctrl/Cmd+F opens an inline find bar with next / previous and Esc-to-close.
+- **DevTools** — open Chromium DevTools in its own window from the settings row, the page's right-click menu, or with F12.
+- **Browser console** — a togglable bottom panel inside the tool window shows the active tab's `window.console` output in real time, with level-coloured lines. Toggle from the settings row or with Ctrl+`. F12 (or the right-click menu) still opens the full DevTools when you need it.
+- **Hard reload** — Ctrl/Cmd+Shift+R reloads bypassing the disk cache. The reload icon doubles as a **stop** button while a page is loading.
 - **Themed empty state** — a clean, theme-aware SVG screen before anything loads and when a page fails to load, in place of Chromium's raw error page.
-- **Right-click menu** — Chromium's standard context menu, with **View Page Source** routed through `view-source:` so it actually works.
+- **Right-click menu** — Chromium's standard context menu, plus an **Open DevTools** item and a **Zoom** submenu. **View Page Source** opens in a new tab so you can close it to dismiss source view.
+- **Per-host zoom memory** — adjust zoom on a site and it's restored automatically next time you visit the same host.
 - **Open in…** — hand the current page to your system default browser, or any browser configured under *Settings → Tools → Web Browsers*.
 
 ### Live reload
 - **Reload on save** — reload when a watched file is saved (⌘S or IntelliJ autosave). Pick the **folder** to watch (default: the whole project) and the **extensions** (default: common web files like `html, css, scss, js, ts, jsx, tsx, vue, svelte`).
-- **Auto-refresh** — reload on a fixed timer; default **5 s**, set any interval.
+- **Watch patterns** — for finer control, supply one glob per line (e.g. `/project/src/**/*.{ts,tsx}`). Patterns override the simple folder + extensions scheme when present.
+- **Auto-refresh** — reload on a fixed timer; pick from preset intervals (1, 2, 3, 5, 10, 30, 60 seconds).
 
 ### Open on run
 - When a run configuration starts, open the tool window and navigate it to your app. Choose **which** configuration (or *Any*), the **URL** (blank = home), and **when** to open: *the URL is reachable* (polls the host:port until the server responds — the truest "after the app has loaded"; default), *after a fixed delay*, or *immediately on launch*.
 
+### IDE integration
+- **Open URL in Web Browser Panel** — right-click a URL in the editor (or select one) and route it to the panel instead of the OS browser. Bound to Ctrl/Cmd+Shift+B.
+
 ### Configuration
-All options live under *Settings → Tools → Web Browser Panel*, including the **home / dev-server URL** (default `http://localhost:3000`). Toggle states and the refresh interval persist between sessions.
+All options live under *Settings → Tools → Web Browser Panel*. The home / dev-server URL has a **default** (application-wide, `http://localhost:3000` out of the box) and an optional **per-project override** that wins when set. Toggle states, the refresh interval, and your tab session persist between sessions. A **Detect from project** button scans for Storybook / Next.js / Vite / generic `package.json` dev scripts and pre-fills the URL + watch patterns in one click, a **Clear address-bar history** button forgets the autocomplete suggestions, and **invalid input** (empty URL, unparseable globs, …) is refused at *Apply* time with focus moved to the offending field.
+
+## Keyboard shortcuts
+
+| Shortcut | Action |
+| --- | --- |
+| Ctrl/Cmd+F | Find in page |
+| Esc | Close find bar |
+| Ctrl/Cmd+T | New tab |
+| Ctrl/Cmd+Shift+T | Reopen last closed tab |
+| Ctrl/Cmd+Shift+R | Hard reload (bypass cache) |
+| Ctrl+Tab / Ctrl+Shift+Tab | Cycle to next / previous tab |
+| Ctrl+` | Toggle browser console |
+| F12 | Open DevTools |
+| Middle-click on a tab | Close the tab |
+| Right-click on a tab | Pin / Close / Close Other |
+| Drag a tab | Reorder |
+| Ctrl/Cmd+Shift+B | Open URL under caret in the panel (editor) |
 
 ## Requirements
 
@@ -74,6 +100,18 @@ the IDE. The **Web Browser** tool window then appears on the right tool-window b
 
 **From a local build (for testing an unreleased version):** *Settings → Plugins →
 ⚙ → Install Plugin from Disk…*, pick the zip from `build/distributions/`, and restart.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for the per-version notes. The same notes
+also appear on the Marketplace under *What's New*.
+
+## Contributing
+
+Issues are welcome — see the *Bug report* and *Feature request* templates
+when you open one. Pull requests are welcome too; the codebase aims for
+strong DDD + functional-style Kotlin, and the domain layer is covered by
+plain-JVM unit tests under `domainTest` (JaCoCo measures coverage there).
 
 ## Author & license
 

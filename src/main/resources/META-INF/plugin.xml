@@ -52,6 +52,65 @@
 
     <!-- WHAT'S NEW: shown as the Marketplace "What's New" / change-notes section. -->
     <change-notes><![CDATA[
+        <h3>0.5.0 – 0.5.7</h3>
+        <p>The 0.5 line turns the panel into a proper in-IDE dev browser:
+        in-page search, DevTools and a console, a full-featured tab strip,
+        project-aware settings, and editor integration.</p>
+
+        <p><b>Dev-loop power tools.</b></p>
+        <ul>
+            <li><b>Find in page</b> (Ctrl/Cmd+F) — inline find bar with
+            next / previous and the standard Enter / Shift+Enter / Esc keys.</li>
+            <li><b>DevTools</b> — open the full Chromium DevTools in its own
+            window from a toolbar button or with F12.</li>
+            <li><b>Browser console</b> — a bottom panel shows the active tab's
+            <code>console.log/warn/error</code> output in real time, with
+            level-coloured lines. Toggle it from the settings row or with
+            <b>Ctrl+`</b>.</li>
+            <li><b>Hard reload</b> bypassing the disk cache (Ctrl/Cmd+Shift+R),
+            plus a <b>Stop</b> button: the reload icon turns into a stop icon
+            while a page is loading and cancels the load on click.</li>
+        </ul>
+
+        <p><b>A full tab strip.</b></p>
+        <ul>
+            <li><b>Drag to reorder</b>, <b>pin</b> tabs, and a right-click menu
+            with <i>Pin</i> / <i>Close</i> / <i>Close Other Tabs</i>. Pinned
+            tabs survive <i>Close Other</i> and round-trip across restarts.</li>
+            <li><b>Overflow</b> — the tab strip scrolls horizontally when there
+            are more tabs than fit, instead of wrapping onto a second row.</li>
+            <li><b>Reopen closed tab</b> (Ctrl/Cmd+Shift+T), <b>middle-click to
+            close</b>, <b>New Tab</b> (Ctrl/Cmd+T), and <b>Ctrl+Tab</b> /
+            <b>Ctrl+Shift+Tab</b> cycling.</li>
+            <li><b>Persisted session</b> — your open tabs are restored when the
+            project re-opens.</li>
+        </ul>
+
+        <p><b>Project-aware settings.</b></p>
+        <ul>
+            <li><b>Per-project home URL</b> overriding the application default,
+            used by the <i>Home</i> button and <i>Open in…</i>.</li>
+            <li><b>Glob watch patterns</b> — a power-user alternative to the
+            folder + extensions field, e.g.
+            <code>/project/src/**/*.{ts,tsx}</code>, one per line.</li>
+            <li><b>Per-host zoom memory</b> — a site's zoom level is remembered
+            and reapplied next time you visit that host.</li>
+            <li><b>Detect from project</b> — a button that scans for Storybook /
+            Next.js / Vite / <code>package.json</code> dev scripts and
+            pre-fills the URL, watch patterns, and a run-config hint.</li>
+            <li><b>Settings validation</b> — <i>Apply</i> refuses invalid input
+            (empty URL, unparseable globs) and focuses the offending field.</li>
+        </ul>
+
+        <p><b>Address bar &amp; editor integration.</b></p>
+        <ul>
+            <li><b>History-backed autocomplete</b> on the address bar — a
+            per-project list of visited URLs suggested as you type (arrow keys
+            to navigate, Enter to accept, Esc to dismiss).</li>
+            <li><b>Open URL in Web Browser Panel</b> — an editor right-click
+            action (Ctrl/Cmd+Shift+B) opens the URL under the caret, or the
+            selected text, in the panel instead of the OS browser.</li>
+        </ul>
         <h3>0.2.8 – 0.4.3</h3>
         <p>A series of releases focused on a richer browsing experience and a
         tidier toolbar.</p>
@@ -192,4 +251,17 @@
             class="no.dervis.webbrowser.execution.WebBrowserExecutionListener"
             topic="com.intellij.execution.ExecutionListener"/>
     </applicationListeners>
+
+    <actions>
+        <action
+            id="no.dervis.webbrowser.action.OpenInWebBrowserPanel"
+            class="no.dervis.webbrowser.action.OpenInWebBrowserPanelAction"
+            text="Open URL in Web Browser Panel"
+            description="Open the URL under the caret (or the selected text) in the Web Browser Panel tool window">
+            <keyboard-shortcut keymap="$default" first-keystroke="control shift B"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="meta shift B"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="meta shift B"/>
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+        </action>
+    </actions>
 </idea-plugin>

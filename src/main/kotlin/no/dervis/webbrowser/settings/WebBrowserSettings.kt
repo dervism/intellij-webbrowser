@@ -5,6 +5,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
+import no.dervis.webbrowser.domain.PerHostZoom
 
 /**
  * Application-level persisted settings for the embedded browser.
@@ -21,6 +22,9 @@ class WebBrowserSettings : PersistentStateComponent<WebBrowserSettings.State> {
         var reloadOnSave: Boolean = false,
         var autoRefresh: Boolean = false,
         var settingsPanelExpanded: Boolean = false,
+        // Per-host zoom memory: hostname → CEF zoom level. IntelliJ's XML
+        // serializer needs a concrete mutable map type, not a Map interface.
+        var perHostZoom: HashMap<String, Double> = HashMap(),
     )
 
     private var state = State()
@@ -65,6 +69,15 @@ class WebBrowserSettings : PersistentStateComponent<WebBrowserSettings.State> {
         set(value) {
             state.settingsPanelExpanded = value
         }
+
+    /** Read the stored zoom level for [host], or [no.dervis.webbrowser.domain.ZoomLevel.DEFAULT]. */
+    fun zoomFor(host: String?): Double = PerHostZoom.lookup(state.perHostZoom, host)
+
+    /** Record [level] for [host]. Default-level entries are dropped from the map. */
+    fun rememberZoom(host: String?, level: Double) {
+        val updated = PerHostZoom.remember(state.perHostZoom, host, level)
+        state.perHostZoom = HashMap(updated)
+    }
 
     override fun getState(): State = state
 
