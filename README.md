@@ -40,7 +40,13 @@ The plugin was purpose built for my own needs, and I also wanted to stay within 
 - **Open URL in Web Browser Panel** — right-click a URL in the editor (or select one) and route it to the panel instead of the OS browser. Bound to Ctrl/Cmd+Shift+B.
 
 ### Configuration
-All options live under *Settings → Tools → Web Browser Panel*. The home / dev-server URL has a **default** (application-wide, `http://localhost:3000` out of the box) and an optional **per-project override** that wins when set. Toggle states, the refresh interval, and your tab session persist between sessions. A **Detect from project** button scans for Storybook / Next.js / Vite / generic `package.json` dev scripts and pre-fills the URL + watch patterns in one click, a **Clear address-bar history** button forgets the autocomplete suggestions, and **invalid input** (empty URL, unparseable globs, …) is refused at *Apply* time with focus moved to the offending field.
+The settings page lives under *Settings → Tools → Web Browser Panel*, in three groups:
+
+- **URLs & history** — the **default home / dev-server URL** (application-wide, `http://localhost:3000` out of the box) and an optional **per-project home URL** that overrides it. **Detect from project** scans for Storybook / Next.js / Vite / generic `package.json` dev scripts and pre-fills the URL and watch patterns in one click; **Clear address-bar history** forgets the autocomplete suggestions (with a live count of how many are stored).
+- **Reload on save** — the **folder** to watch (default: the whole project) and the file **extensions**, or — for finer control — newline-separated **watch patterns** (globs like `/project/src/**/*.{ts,tsx}`) that override the folder + extensions when set.
+- **Open browser on run** — enable opening the panel when a run configuration starts, then choose **which** configuration (or *Any*), the **URL** (blank = home), and **when** to open (the URL is reachable / after a delay / immediately).
+
+**Invalid input** (empty URL, unparseable globs, …) is refused at *Apply* time with focus moved to the offending field. Most in-panel toggles — *Reload on save*, *Auto-refresh* and its interval, the collapsible *Settings* row — plus your tab session persist between sessions.
 
 ## Keyboard shortcuts
 
