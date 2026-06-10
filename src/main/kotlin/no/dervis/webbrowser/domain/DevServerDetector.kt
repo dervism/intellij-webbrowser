@@ -40,14 +40,12 @@ object DevServerDetector {
      * specificity order (Storybook → Next → Vite → generic npm script) so the
      * most specific match ends up at the top.
      */
-    fun detect(shape: ProjectShape): List<Suggestion> {
-        val out = mutableListOf<Suggestion>()
-        detectStorybook(shape)?.let(out::add)
-        detectNext(shape)?.let(out::add)
-        detectVite(shape)?.let(out::add)
-        detectGenericNpmScript(shape)?.let(out::add)
-        return out
-    }
+    fun detect(shape: ProjectShape): List<Suggestion> = listOfNotNull(
+        detectStorybook(shape),
+        detectNext(shape),
+        detectVite(shape),
+        detectGenericNpmScript(shape),
+    )
 
     private fun detectStorybook(shape: ProjectShape): Suggestion? {
         if (shape.files.none { it.startsWith(".storybook/") || it == ".storybook" }) return null

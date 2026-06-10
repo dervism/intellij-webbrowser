@@ -48,7 +48,6 @@ import java.awt.Dimension
 import java.awt.FlowLayout
 import java.awt.Toolkit
 import java.awt.event.KeyEvent
-import java.net.URI
 import java.util.concurrent.atomic.AtomicLong
 import javax.swing.AbstractAction
 import javax.swing.ActionMap
@@ -381,9 +380,9 @@ class WebBrowserPanel(
         WebBrowserProjectSettings.getInstance(project).saveTabSession(session)
     }
 
-    /** Best-effort host extraction; tolerates malformed URLs by returning `null`. */
+    /** Best-effort host extraction via the domain [Url] type; `null` on malformed input. */
     private fun hostOf(rawUrl: String): String? =
-        runCatching { URI(rawUrl).host }.getOrNull()
+        Url.parse(rawUrl).getOrNull()?.host
 
     private fun newTab(): BrowserTabPane {
         val tab = BrowserTabPane(TabId(nextTabId.getAndIncrement()), parentDisposable, tabCallbacks)
