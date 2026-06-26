@@ -41,9 +41,6 @@ editor integration.
   folder + extensions field, e.g. `/project/src/**/*.{ts,tsx}`, one per line.
 - **Per-host zoom memory** — a site's zoom level is remembered and reapplied
   next time you visit that host.
-- **Detect from project** — a button that scans for Storybook / Next.js /
-  Vite / `package.json` dev scripts and pre-fills the URL, watch patterns,
-  and a run-config hint.
 - **Settings validation** — *Apply* refuses invalid input (empty URL,
   unparseable globs) and focuses the offending field.
 
@@ -62,7 +59,7 @@ editor integration.
   `JTabbedPane` / `JBTabs` couldn't render a usable close button or height in
   this tool-window context).
 - Find-in-page extracted into a `FindOverlay` component; new pure-domain
-  types `ConsoleMessage`, `DevServerDetector`, `SettingsValidation`,
+  types `ConsoleMessage`, `SettingsValidation`,
   `AddressBarHistory`, `TabSession`, and per-host-zoom / glob helpers, each
   covered by unit tests.
 

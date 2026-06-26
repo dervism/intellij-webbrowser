@@ -14,8 +14,6 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.FormBuilder
 import com.intellij.util.ui.JBUI
-import no.dervis.webbrowser.detector.detectDevServers
-import no.dervis.webbrowser.domain.DevServerDetector
 import no.dervis.webbrowser.domain.ReadinessMode
 import no.dervis.webbrowser.domain.SettingsValidation
 import no.dervis.webbrowser.domain.WebBrowserSettingsSnapshot
@@ -43,7 +41,6 @@ class WebBrowserConfigurable(private val project: Project) : Configurable {
     private var extField: JBTextField? = null
     private var watchFolderField: TextFieldWithBrowseButton? = null
     private var watchPatternsArea: JTextArea? = null
-    private var detectStatusLabel: JBLabel? = null
     private var historyCountLabel: JBLabel? = null
 
     private var openOnRunCheck: JCheckBox? = null
@@ -75,16 +72,6 @@ class WebBrowserConfigurable(private val project: Project) : Configurable {
                 "When non-empty, replaces the folder + extensions above."
         }.also { watchPatternsArea = it }
         val patternsScroll = JBScrollPane(patterns)
-
-        val detectButton = JButton("Detect from project").apply {
-            toolTipText = "Scan this project for Storybook / Next.js / Vite / npm dev scripts and pre-fill the URL + watch patterns."
-            addActionListener { runDetection() }
-        }
-        val detectStatus = JBLabel("").apply { foreground = JBColor.GRAY }
-        detectStatusLabel = detectStatus
-        val detectRow = JPanel(FlowLayout(FlowLayout.LEFT, JBUI.scale(6), 0)).apply {
-            add(detectButton); add(detectStatus)
-        }
 
         // Address-bar autocomplete history — an immediate "Clear" action (it
         // doesn't go through Apply, since it's an action, not a stored setting).
@@ -138,7 +125,6 @@ class WebBrowserConfigurable(private val project: Project) : Configurable {
         return FormBuilder.createFormBuilder()
             .addLabeledComponent("Default home / dev-server URL:", home, 1, false)
             .addLabeledComponent("Per-project home URL (overrides default):", projectHome, 1, false)
-            .addComponent(detectRow)
             .addComponent(historyRow)
             .addSeparator()
             .addComponent(JBLabel("<html><b>Reload on save</b></html>"))
@@ -197,25 +183,6 @@ class WebBrowserConfigurable(private val project: Project) : Configurable {
         SettingsValidation.Field.WATCH_PATTERNS -> watchPatternsArea
     }
 
-    /**
-     * Hand the project off to [detectDevServers] (which walks the VFS to
-     * build a [DevServerDetector.ProjectShape]), then apply the top
-     * suggestion's URL + watch patterns to the form fields. The user still
-     * has to hit *Apply* — we never write to the services directly.
-     */
-    private fun runDetection() {
-        val status = detectStatusLabel ?: return
-        val suggestion = detectDevServers(project).firstOrNull()
-        if (suggestion == null) {
-            status.text = "Nothing recognisable detected."
-            return
-        }
-        projectHomeField?.text = suggestion.homeUrl
-        watchPatternsArea?.text = suggestion.watchPatternsText()
-        val runHint = suggestion.runConfigHint?.let { " · run-config hint: \"$it\"" } ?: ""
-        status.text = "Detected: ${suggestion.label}$runHint"
-    }
-
     private fun historyCountText(proj: WebBrowserProjectSettings): String =
         when (val n = proj.addressBarHistorySize()) {
             0 -> "No remembered URLs."
@@ -229,7 +196,6 @@ class WebBrowserConfigurable(private val project: Project) : Configurable {
         extField = null
         watchFolderField = null
         watchPatternsArea = null
-        detectStatusLabel = null
         historyCountLabel = null
         openOnRunCheck = null
         runConfigCombo = null

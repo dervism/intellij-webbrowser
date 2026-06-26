@@ -95,9 +95,6 @@
             <code>/project/src/**/*.{ts,tsx}</code>, one per line.</li>
             <li><b>Per-host zoom memory</b> — a site's zoom level is remembered
             and reapplied next time you visit that host.</li>
-            <li><b>Detect from project</b> — a button that scans for Storybook /
-            Next.js / Vite / <code>package.json</code> dev scripts and
-            pre-fills the URL, watch patterns, and a run-config hint.</li>
             <li><b>Settings validation</b> — <i>Apply</i> refuses invalid input
             (empty URL, unparseable globs) and focuses the offending field.</li>
         </ul>

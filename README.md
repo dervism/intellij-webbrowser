@@ -42,7 +42,7 @@ The plugin was purpose built for my own needs, because I wanted to stay in my ed
 ### Configuration
 The settings page lives under *Settings → Tools → Web Browser Panel*, in three groups:
 
-- **URLs & history** — the **default home / dev-server URL** (application-wide, `http://localhost:3000` out of the box) and an optional **per-project home URL** that overrides it. **Detect from project** scans for Storybook / Next.js / Vite / generic `package.json` dev scripts and pre-fills the URL and watch patterns in one click; **Clear address-bar history** forgets the autocomplete suggestions (with a live count of how many are stored).
+- **URLs & history** — the **default home / dev-server URL** (application-wide, `http://localhost:3000` out of the box) and an optional **per-project home URL** that overrides it. **Clear address-bar history** forgets the autocomplete suggestions (with a live count of how many are stored).
 - **Reload on save** — the **folder** to watch (default: the whole project) and the file **extensions**, or — for finer control — newline-separated **watch patterns** (globs like `/project/src/**/*.{ts,tsx}`) that override the folder + extensions when set.
 - **Open browser on run** — enable opening the panel when a run configuration starts, then choose **which** configuration (or *Any*), the **URL** (blank = home), and **when** to open (the URL is reachable / after a delay / immediately).
 
