@@ -11,7 +11,7 @@ server right next to your code.
 
 ## Why another web browser plugin?
 
-The plugin was purpose built for my own needs, and I also wanted to stay within my editor while coding. The plugin watches selected file types and automatically reloads the webpage directly inside the web browser panel if a file is saved. The panel is also automatically viewed when a run configuration has been ran by the user.
+The plugin was purpose built for my own needs, because I wanted to stay in my editor while coding on laptops with smaller screens and also because certain files in my repoes wheren't part of HMR. The plugin watches selected file types and automatically reloads the files in the web browser panel on save. The panel is also automatically viewed when a run configuration has been ran by the user (see the plugin settings: Settings → Tools → Web Browser Panel).
 
 ## Features
 
