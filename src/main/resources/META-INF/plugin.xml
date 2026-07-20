@@ -45,13 +45,22 @@
         <ul>
             <li>Written in Kotlin and built with the IntelliJ Platform Gradle Plugin.</li>
             <li>Embeds Chromium via JCEF (the bundled JetBrains Runtime) &mdash; no external browser is required for the tool window.</li>
-            <li>Compatible with IntelliJ IDEA 2026.1+ (since-build 261) and other JetBrains IDEs running a JCEF-enabled runtime.</li>
-            <li>A lightweight platform plugin &mdash; depends only on <code>com.intellij.modules.platform</code>.</li>
+            <li>Compatible with IntelliJ IDEA 2026.2+ (since-build 262) and other JetBrains IDEs running a JCEF-enabled runtime.</li>
+            <li>A lightweight platform plugin &mdash; depends only on the platform and the bundled JCEF module (<code>com.intellij.modules.platform</code>, <code>com.intellij.modules.jcef</code>).</li>
         </ul>
     ]]></description>
 
     <!-- WHAT'S NEW: shown as the Marketplace "What's New" / change-notes section. -->
     <change-notes><![CDATA[
+        <h3>0.5.8</h3>
+        <ul>
+            <li><b>Fix: the tool window no longer crashes on IntelliJ IDEA
+            2026.2.</b> 2026.2 moved the embedded-browser runtime (JCEF) into a
+            separate bundled plugin, so opening the panel failed with
+            <code>NoClassDefFoundError: com/intellij/ui/jcef/JBCefApp</code>. The
+            plugin now declares the JCEF module dependency explicitly.
+            <b>Requires 2026.2+</b> (since-build 262); 2026.1 users stay on 0.5.7.</li>
+        </ul>
         <h3>0.5.0 – 0.5.7</h3>
         <p>The 0.5 line turns the panel into a proper in-IDE dev browser:
         in-page search, DevTools and a console, a full-featured tab strip,
@@ -226,6 +235,11 @@
     ]]></change-notes>
 
     <depends>com.intellij.modules.platform</depends>
+    <!-- JCEF (com.intellij.ui.jcef.*) moved into its own bundled plugin in 2026.2
+         (build 262). Without this dependency the embedded-browser classes are not
+         on the plugin's classloader and the tool window fails with
+         NoClassDefFoundError: com/intellij/ui/jcef/JBCefApp. -->
+    <depends>com.intellij.modules.jcef</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow

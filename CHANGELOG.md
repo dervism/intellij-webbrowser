@@ -4,6 +4,24 @@ All notable changes to the **Web Browser Panel** IntelliJ plugin are recorded
 here. The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions match the artifact published to the JetBrains Marketplace.
 
+## [0.5.8] — 2026-07
+
+### Fixed
+- **Tool window no longer crashes on IntelliJ IDEA 2026.2.** 2026.2 (build 262)
+  extracted the embedded-browser runtime (JCEF) into a separate bundled plugin,
+  so `com.intellij.ui.jcef.JBCefApp` was no longer on the plugin's classloader
+  and opening the panel threw
+  `NoClassDefFoundError: com/intellij/ui/jcef/JBCefApp`
+  ([#1](https://github.com/dervism/intellij-webbrowser/issues/1)). The plugin now
+  declares an explicit dependency on the `com.intellij.modules.jcef` module.
+
+### Changed
+- **Minimum IDE is now 2026.2** (since-build 262), the first build where the JCEF
+  module dependency resolves. IntelliJ IDEA 2026.1 users are served 0.5.7, which
+  works there.
+- Updated the build toolchain: Kotlin 2.4.10, IntelliJ Platform Gradle Plugin
+  2.18.1, Arrow 2.2.3, JUnit 5.14.4, JaCoCo 0.8.15, Gradle 9.6.1.
+
 ## [0.5.0] – [0.5.7] — 2026-06
 
 The 0.5 line turns the panel into a proper in-IDE dev browser: in-page search,
@@ -171,5 +189,6 @@ toolbar.
 - Initial release: embedded Chromium browser tool window with an address
   bar, navigation, and a configurable home URL.
 
+[0.5.8]: https://github.com/dervism/intellij-webbrowser/releases/tag/v0.5.8
 [0.5.7]: https://github.com/dervism/intellij-webbrowser/releases/tag/v0.5.7
 [0.5.0]: https://github.com/dervism/intellij-webbrowser/releases/tag/v0.5.0
