@@ -139,6 +139,17 @@ internal class BrowserTabPane(
                 source: String?,
                 line: Int,
             ): Boolean {
+                message?.let { msg ->
+                    // Intercept clipboard sync messages from injected JavaScript
+                    if (msg.startsWith("__CLIPBOARD_COPY__:")) {
+                        val copiedText = msg.substringAfter("__CLIPBOARD_COPY__:")
+                        if (copiedText.isNotEmpty()) {
+                            ClipboardSynchronizer.setSystemClipboardText(copiedText)
+                        }
+                        return true // suppress this message from console output
+                    }
+                }
+
                 // Map CEF's LogSeverity enum to our int-based domain factory.
                 // (Java enums have an ordinal we can use rather than depending
                 //  on the exact constant set.)
@@ -211,6 +222,23 @@ internal class BrowserTabPane(
                 val url = cefBrowser?.url.orEmpty()
                 if (url.startsWith("data:") || url.startsWith("about:")) return
                 frame.executeJavaScript(FORCE_LIGHT_FOR_UNTHEMED_JS, url, 0)
+
+                // Inject clipboard synchronization script to enable copy/paste with IDE
+                ClipboardSynchronizer.injectSyncScript(frame, url)
+
+                // Make system clipboard content available to the page for paste operations
+                val systemClipboardText = ClipboardSynchronizer.getSystemClipboardText()
+                if (!systemClipboardText.isNullOrEmpty()) {
+                    val escapedText = systemClipboardText.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n")
+                    val injectSystemClipboardScript = """
+                        (function() {
+                          if (!window.__lastSystemClipboard) {
+                            window.__lastSystemClipboard = "$escapedText";
+                          }
+                        })();
+                    """.trimIndent()
+                    frame.executeJavaScript(injectSystemClipboardScript, url, 0)
+                }
             }
         }, browser.cefBrowser)
 
