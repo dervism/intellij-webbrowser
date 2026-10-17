@@ -70,11 +70,11 @@ The settings page lives under *Settings → Tools → Web Browser Panel*, in thr
 - IntelliJ IDEA **2026.2** (build 262) or newer, running on a JCEF-enabled
   JetBrains Runtime (the default JBR includes JCEF). (2026.1 is supported by
   plugin version 0.5.7 and earlier.)
-- A JDK to build with: **JDK 26**. IntelliJ 2026.2 ships some platform classes
-  (the JCEF module) as Java 25 bytecode, so the build toolchain must be able to
-  read them; the build is pinned to the installed JDK 26 in `build.gradle.kts`.
-  The plugin itself still compiles to **Java 21** bytecode, so it runs on the
-  IDE's JBR 25.
+- A JDK to build with: **JDK 25 or newer**. IntelliJ 2026.2 ships some platform
+  classes (the JCEF module) as Java 25 bytecode, so the build toolchain must be
+  able to read them; the build uses whatever JDK is running Gradle (your
+  `JAVA_HOME`), so no specific version is pinned. The plugin itself still compiles
+  to **Java 21** bytecode, so it runs on the IDE's JBR 25.
 
 ## Build
 

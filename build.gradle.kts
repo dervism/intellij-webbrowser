@@ -4,8 +4,8 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "2.4.10"
-    id("org.jetbrains.intellij.platform") version "2.18.1"
+    kotlin("jvm") version "2.4.21"
+    id("org.jetbrains.intellij.platform") version "2.19.0"
     jacoco
 }
 
@@ -101,9 +101,10 @@ val domainTest by tasks.registering(Test::class) {
 tasks.named("check") { dependsOn(domainTest) }
 
 jacoco {
-    // 0.8.13+ adds experimental Java 25/26 support — required because the Gradle
-    // daemon and test JVM both run on JDK 26; older releases silently no-op on
-    // the newer JVM and the report comes back at 0% coverage.
+    // 0.8.13+ adds experimental support for recent Java releases — required
+    // because the Gradle daemon and test JVM run on the installed JDK (25+, e.g.
+    // JDK 27); older JaCoCo silently no-ops on newer JVMs and the report comes
+    // back at 0% coverage.
     toolVersion = "0.8.15"
 }
 
@@ -147,20 +148,21 @@ intellijPlatform {
 
 // IntelliJ 2026.2 bundles JBR 25 and ships some platform classes (e.g. the JCEF
 // module's JBCefApp) as Java 25 bytecode, so the IntelliJ Platform Gradle Plugin
-// requests a JDK 25 toolchain to compile against them. This machine has JDK 26
-// installed (not 25); 26 reads Java 25 classes and runs them fine, so pin the
-// toolchain to the installed 26 rather than provisioning a separate JDK 25.
-// Output bytecode is still Java 21 via jvmTarget below.
+// needs a toolchain that can read them — JDK 25 or newer. Rather than pin an
+// exact version (which breaks every time the installed JDK is bumped, e.g. 25 →
+// 26 → 27) or provision a separate JDK, reuse the JDK that is already running
+// Gradle (JAVA_HOME). It must be 25+. Output bytecode is still Java 21 (see the
+// jvmTarget / release settings below), so the plugin runs on the IDE's JBR 25.
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(26)
+        languageVersion = JavaLanguageVersion.of(Runtime.version().feature())
     }
 }
 
 kotlin {
     compilerOptions {
         // Target Java 21 bytecode: runs on the IDE's JBR 25 and stays broadly
-        // compatible. NOTE: the JDK 26 toolchain overrides this extension-level
+        // compatible. NOTE: the 25+ compile toolchain overrides this extension-level
         // value, so it is re-asserted per-task in the configureEach block below.
         jvmTarget = JvmTarget.JVM_21
         // Use the JVM's native default-method dispatch for Java interface defaults
@@ -171,20 +173,20 @@ kotlin {
     }
 }
 
-// The JDK 26 toolchain makes KGP set -jvm-target to 26, which overrides the
-// extension-level jvmTarget above and would emit Java 26 bytecode the IDE's
-// JBR 25 cannot load. Pin -jvm-target back to 21 on every Kotlin compile task;
-// configureEach runs at task realization (after the toolchain wiring), so this
-// value wins. Emitted bytecode is then Java 21, runnable on JBR 25 and up.
+// The 25+ compile toolchain makes KGP set -jvm-target to the toolchain version,
+// which overrides the extension-level jvmTarget above and would emit bytecode the
+// IDE's JBR 25 cannot load (e.g. Java 27). Pin -jvm-target back to 21 on every
+// Kotlin compile task; configureEach runs at task realization (after the toolchain
+// wiring), so this value wins. Emitted bytecode is then Java 21, runnable on JBR 25+.
 tasks.withType<KotlinCompile>().configureEach {
     compilerOptions {
         jvmTarget = JvmTarget.JVM_21
     }
 }
 
-// Match the Java compile tasks to the same target (21). With the JDK 26 toolchain
-// javac would default to release 26, which both emits unloadable bytecode and
-// trips KGP's Kotlin/Java target-consistency check against the pinned Kotlin 21.
+// Match the Java compile tasks to the same target (21). With the 25+ toolchain
+// javac would default to the toolchain release, which both emits unloadable
+// bytecode and trips KGP's Kotlin/Java target-consistency check against Kotlin 21.
 tasks.withType<JavaCompile>().configureEach {
     options.release.set(21)
 }
