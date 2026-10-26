@@ -62,7 +62,7 @@ dependencies {
     // Arrow functional core (Either / Option / raise DSL). The Kotlin stdlib it
     // depends on is already provided by the IntelliJ Platform at runtime, so it's
     // excluded to avoid bundling a duplicate.
-    implementation("io.arrow-kt:arrow-core:2.2.3") {
+    implementation("io.arrow-kt:arrow-core:2.3.0") {
         exclude(group = "org.jetbrains.kotlin")
     }
 
@@ -105,7 +105,7 @@ jacoco {
     // because the Gradle daemon and test JVM run on the installed JDK (25+, e.g.
     // JDK 27); older JaCoCo silently no-ops on newer JVMs and the report comes
     // back at 0% coverage.
-    toolVersion = "0.8.15"
+    toolVersion = "0.8.16"
 }
 
 tasks.jacocoTestReport {
