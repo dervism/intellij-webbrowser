@@ -44,7 +44,7 @@ value class DevServerUrl private constructor(val url: Url) {
             ensure((port ?: defaultPort(scheme)) !in excludedPorts)
             ensure(path.length <= MAX_PATH_LENGTH && PATH.matches(path))
             val rebuilt = "$scheme://$host${port?.let { ":$it" }.orEmpty()}$path"
-            DevServerUrl(Url.parse(rebuilt).bind())
+            DevServerUrl(Url.web(rebuilt).bind())
         }
 
         /**

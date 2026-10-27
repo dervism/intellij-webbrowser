@@ -5,16 +5,16 @@ import com.intellij.execution.ExecutionListener
 import com.intellij.execution.process.ProcessHandler
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.openapi.diagnostic.thisLogger
-import no.dervis.webbrowser.domain.OpenRequest
+import no.dervis.webbrowser.WebBrowserNotifications
+import no.dervis.webbrowser.domain.LaunchSchedule
 import no.dervis.webbrowser.domain.OpenRunSkip
-import no.dervis.webbrowser.domain.ReadinessMode
 import no.dervis.webbrowser.settings.WebBrowserProjectSettings
 import no.dervis.webbrowser.settings.WebBrowserSettings
 
 /**
  * Fires for every run configuration that starts (run or debug, any type). Delegates
  * the decision to the pure [OpenOnRunPolicy][no.dervis.webbrowser.domain.OpenOnRunPolicy]
- * and only acts on a resolved request.
+ * and only acts on a resolved [LaunchSchedule].
  */
 class WebBrowserExecutionListener : ExecutionListener {
 
@@ -26,9 +26,9 @@ class WebBrowserExecutionListener : ExecutionListener {
      * before any output. The other modes wait for [processStarted].
      */
     override fun processStarting(executorId: String, env: ExecutionEnvironment, handler: ProcessHandler) {
-        resolve(env).onRight { request ->
-            if (request.readiness == ReadinessMode.WHEN_ANNOUNCED) {
-                WebBrowserLauncher.scheduleOpen(env.project, request, handler)
+        resolve(env).onRight { schedule ->
+            if (schedule is LaunchSchedule.WhenAnnounced) {
+                WebBrowserLauncher.scheduleOpen(env.project, schedule, handler)
             }
         }
     }
@@ -43,18 +43,18 @@ class WebBrowserExecutionListener : ExecutionListener {
         log.info("processStarted runProfile='$configName' executor='$executorId'")
 
         resolve(env).fold(
-            ifLeft = { skip -> log.info("Not opening browser for '$configName': $skip") },
-            ifRight = { request ->
-                log.info(
-                    "Scheduling browser open for '$configName' → ${destination(request)}, " +
-                        "${request.readiness} (wait ${request.waitSeconds}s)",
-                )
-                WebBrowserLauncher.scheduleOpen(env.project, request, handler)
+            ifLeft = { skip ->
+                log.info("Not opening browser for '$configName': $skip")
+                if (skip == OpenRunSkip.NoValidUrl) notifyRejectedUrl(env)
+            },
+            ifRight = { schedule ->
+                log.info("Scheduling browser open for '$configName': ${describe(schedule)}")
+                WebBrowserLauncher.scheduleOpen(env.project, schedule, handler)
             },
         )
     }
 
-    private fun resolve(env: ExecutionEnvironment): Either<OpenRunSkip, OpenRequest> {
+    private fun resolve(env: ExecutionEnvironment): Either<OpenRunSkip, LaunchSchedule> {
         val settings = WebBrowserProjectSettings.getInstance(env.project)
         return settings.openOnRunPolicy().resolve(
             startedConfigName = env.runProfile.name,
@@ -63,7 +63,25 @@ class WebBrowserExecutionListener : ExecutionListener {
         )
     }
 
-    /** The configured URL isn't used when the server's printed URL is opened instead. */
-    private fun destination(request: OpenRequest): String =
-        if (request.readiness == ReadinessMode.WHEN_ANNOUNCED) "the URL the server prints" else request.url.toString()
+    /** One log line's worth of what will open and when; URLs show only scheme, host and port. */
+    private fun describe(schedule: LaunchSchedule): String = when (schedule) {
+        is LaunchSchedule.Immediate -> "${schedule.url.redacted}, immediately"
+        is LaunchSchedule.Delayed -> "${schedule.url.redacted}, after ${schedule.delaySeconds}s"
+        is LaunchSchedule.WhenReachable -> "${schedule.url.redacted}, once reachable (up to ${schedule.timeoutSeconds}s)"
+        is LaunchSchedule.WhenAnnounced -> "the URL the server prints (up to ${schedule.timeoutSeconds}s)"
+    }
+
+    /**
+     * Open-on-run is on but its URL was refused, usually because the stored value isn't
+     * http or https (for example, edited in a shared project file). Say so instead of
+     * silently doing nothing. Only `processStarted` calls this, so it shows once per run.
+     */
+    private fun notifyRejectedUrl(env: ExecutionEnvironment) {
+        WebBrowserNotifications.warn(
+            env.project,
+            "Open browser on run skipped",
+            "The URL to open isn't an http or https URL. Check the open URL in Settings → Tools → " +
+                "Web Browser Panel, or the home URL if the open URL is blank.",
+        )
+    }
 }

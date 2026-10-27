@@ -1,5 +1,6 @@
 package no.dervis.webbrowser.ui
 
+import arrow.core.Option
 import com.intellij.icons.AllIcons
 import com.intellij.ide.browsers.BrowserLauncher
 import com.intellij.ide.browsers.WebBrowser
@@ -7,6 +8,7 @@ import com.intellij.ide.browsers.WebBrowserManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
+import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.popup.JBPopupFactory
@@ -31,18 +33,22 @@ import com.intellij.util.messages.MessageBusConnection
 import com.intellij.util.ui.JBUI
 import no.dervis.webbrowser.BrowserView
 import no.dervis.webbrowser.WebBrowserController
+import no.dervis.webbrowser.WebBrowserNotifications
+import no.dervis.webbrowser.domain.AddressBarFilter
 import no.dervis.webbrowser.domain.AddressBarRequest
 import no.dervis.webbrowser.domain.ClosedTabHistory
 import no.dervis.webbrowser.domain.ConsoleMessage
 import no.dervis.webbrowser.domain.HomeUrlResolver
 import no.dervis.webbrowser.domain.ReloadRule
 import no.dervis.webbrowser.domain.TabId
+import no.dervis.webbrowser.domain.TabLimits
 import no.dervis.webbrowser.domain.TabSession
 import no.dervis.webbrowser.domain.Url
 import no.dervis.webbrowser.domain.WatchGlobs
 import no.dervis.webbrowser.domain.ZoomLevel
 import no.dervis.webbrowser.settings.WebBrowserProjectSettings
 import no.dervis.webbrowser.settings.WebBrowserSettings
+import no.dervis.webbrowser.settings.WebBrowserWorkspaceState
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.FlowLayout
@@ -76,6 +82,8 @@ class WebBrowserPanel(
     private val project: Project,
     private val parentDisposable: Disposable,
 ) : JPanel(BorderLayout()), BrowserView {
+
+    private val log = thisLogger()
 
     private val urlField = ExtendableTextField()
 
@@ -201,6 +209,10 @@ class WebBrowserPanel(
             setTabTitle(id, title)
         }
         override fun onPopupRequested(parent: TabId, url: Url) {
+            if (!TabLimits.allowsPopup(registry.state.tabs.size)) {
+                log.info("Ignoring a popup: ${registry.state.tabs.size} tabs are already open")
+                return
+            }
             openInNewTab(url)
         }
         override fun onViewSourceRequested(parent: TabId, sourceUrl: String) {
@@ -225,7 +237,7 @@ class WebBrowserPanel(
             )
         } else {
             val settings = WebBrowserSettings.getInstance()
-            urlField.text = effectiveHomeUrl()
+            urlField.text = webHomeUrl().getOrNull()?.value.orEmpty()
             settingsExpanded = settings.settingsPanelExpanded
 
             add(buildHeader(), BorderLayout.NORTH)
@@ -303,25 +315,23 @@ class WebBrowserPanel(
      * try to persist a half-built session back.
      */
     private fun restoreTabSessionOrInitial() {
-        val session = WebBrowserProjectSettings.getInstance(project).tabSession()
-        val urls = session.resolvedUrls()
-        if (urls.isEmpty()) {
+        val plan = WebBrowserWorkspaceState.getInstance(project).tabSession().restorePlan()
+        if (plan.tabs.isEmpty()) {
             openInitialTab()
             return
         }
         isRestoring = true
         try {
-            val createdTabs = urls.mapIndexed { idx, url ->
+            val createdTabs = plan.tabs.map { restored ->
                 val tab = newTab()
-                if (session.isPinnedAt(idx)) {
+                if (restored.pinned) {
                     registry.pin(tab.id)
                     tabStrip.setPinned(tab.id, true)
                 }
-                tab.load(url)
+                tab.load(restored.url)
                 tab
             }
-            val activeIdx = session.safeActiveIndex().coerceIn(0, createdTabs.lastIndex)
-            activateTab(createdTabs[activeIdx].id)
+            activateTab(createdTabs[plan.activeIndex].id)
         } finally {
             isRestoring = false
         }
@@ -377,12 +387,12 @@ class WebBrowserPanel(
         val activeUrl = state.activeId?.let { registry.pane(it)?.currentUrl() }
         val pinnedUrls = state.pinned.mapNotNull { registry.pane(it)?.currentUrl() }.toSet()
         val session = TabSession.capture(rawUrls, activeUrl, pinnedUrls)
-        WebBrowserProjectSettings.getInstance(project).saveTabSession(session)
+        WebBrowserWorkspaceState.getInstance(project).saveTabSession(session)
     }
 
     /** Best-effort host extraction via the domain [Url] type; `null` on malformed input. */
     private fun hostOf(rawUrl: String): String? =
-        Url.parse(rawUrl).getOrNull()?.host
+        Url.live(rawUrl).getOrNull()?.host
 
     private fun newTab(): BrowserTabPane {
         val tab = BrowserTabPane(TabId(nextTabId.getAndIncrement()), parentDisposable, tabCallbacks)
@@ -405,11 +415,8 @@ class WebBrowserPanel(
     /** Close [id]: record it for reopen, dispose the browser, reconcile, activate a neighbour. */
     private fun closeTab(id: TabId) {
         val pane = registry.pane(id) ?: return
-        val current = pane.currentUrl()
-        if (current.startsWith("http://") || current.startsWith("https://")) {
-            Url.parse(current).onSome { url ->
-                closedTabs = closedTabs.push(ClosedTabHistory.Entry(url, url.value))
-            }
+        Url.live(pane.currentUrl()).onSome { url ->
+            closedTabs = closedTabs.push(ClosedTabHistory.Entry(url, url.value))
         }
         tabStrip.removeTab(id)
         registry.remove(id)
@@ -445,8 +452,7 @@ class WebBrowserPanel(
         canGoBack = tab.canGoBack
         canGoForward = tab.canGoForward
         isLoading = tab.isLoading
-        val text = tab.currentUrl().takeIf { it.startsWith("http://") || it.startsWith("https://") }
-            ?: effectiveHomeUrl()
+        val text = AddressBarFilter.displayable(tab.currentUrl()) ?: webHomeUrl().getOrNull()?.value.orEmpty()
         addressAutocomplete.setTextSilently(text)
         urlField.repaint()
         // The find overlay is global — close it on tab switch so a stale
@@ -454,9 +460,14 @@ class WebBrowserPanel(
         if (findOverlay.isVisible) hideFindOverlay()
     }
 
-    /** The home / dev-server URL, with the per-project override taking precedence. */
-    private fun effectiveHomeUrl(): String =
-        HomeUrlResolver.effective(
+    /**
+     * The home / dev-server URL (the per-project override takes precedence), as an
+     * http or https URL. The project home comes from a shared project file, so a
+     * value that isn't http or https is never loaded, opened elsewhere or put in
+     * the address bar.
+     */
+    private fun webHomeUrl(): Option<Url> =
+        HomeUrlResolver.web(
             WebBrowserProjectSettings.getInstance(project).projectHomeUrl,
             WebBrowserSettings.getInstance().homeUrl,
         )
@@ -485,7 +496,7 @@ class WebBrowserPanel(
         val homeButton = JButton("Home").apply {
             toolTipText = "Go to the configured home / dev-server URL"
             isFocusable = false
-            addActionListener { navigate(effectiveHomeUrl()) }
+            addActionListener { goHome() }
         }
         val newTabButton = JButton("New Tab", AllIcons.General.Add).apply {
             horizontalTextPosition = SwingConstants.RIGHT
@@ -548,7 +559,7 @@ class WebBrowserPanel(
         addressAutocomplete = AddressBarAutocomplete(
             field = urlField,
             historyProvider = {
-                WebBrowserProjectSettings.getInstance(project).addressBarHistory()
+                WebBrowserWorkspaceState.getInstance(project).addressBarHistory()
             },
             onAccept = { navigate(it) },
         )
@@ -762,7 +773,7 @@ class WebBrowserPanel(
             // Record the resolved URL in the project's history so the next
             // address-bar autocomplete sees it. Records only http(s); the
             // history's own filter quietly drops anything else.
-            WebBrowserProjectSettings.getInstance(project)
+            WebBrowserWorkspaceState.getInstance(project)
                 .recordAddressBarUrl(request.target.value)
         }
     }
@@ -781,13 +792,34 @@ class WebBrowserPanel(
     }
 
     private fun openExternally(externalBrowser: WebBrowser?) {
-        // Use the same address-bar interpretation as Enter, so if the user
-        // typed a search query and hit "Open in…", the external browser also
-        // gets the Startpage URL.
-        val url = AddressBarRequest.parse(urlField.text).getOrNull()?.target
-            ?: Url.parse(effectiveHomeUrl()).getOrNull()
-            ?: return
-        service<BrowserLauncher>().browse(url.value, externalBrowser, project)
+        // Same address-bar interpretation as Enter, so a typed search opens as the
+        // Startpage URL. Only http and https go to the OS.
+        AddressBarRequest.externalTarget(urlField.text, webHomeUrl()).fold(
+            ifEmpty = {
+                WebBrowserNotifications.warn(
+                    project,
+                    "Can't open this page elsewhere",
+                    "Only http and https pages can be opened in another browser.",
+                )
+            },
+            ifSome = { url -> service<BrowserLauncher>().browse(url.value, externalBrowser, project) },
+        )
+    }
+
+    private fun goHome() {
+        webHomeUrl().fold(
+            ifEmpty = {
+                WebBrowserNotifications.warn(
+                    project,
+                    "Home URL not loaded",
+                    "The home URL in Settings → Tools → Web Browser Panel isn't an http or https URL.",
+                )
+            },
+            ifSome = { url ->
+                load(url)
+                WebBrowserWorkspaceState.getInstance(project).recordAddressBarUrl(url.value)
+            },
+        )
     }
 
     private data class OpenTarget(val label: String, val browser: WebBrowser?)

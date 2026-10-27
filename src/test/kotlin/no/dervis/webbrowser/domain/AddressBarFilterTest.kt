@@ -43,4 +43,20 @@ class AddressBarFilterTest {
         val url = "https://example.com:8443/x"
         assertEquals(url, AddressBarFilter.displayable(url))
     }
+
+    @Test
+    fun `a very long URL is still displayable`() {
+        val long = "https://dashboards.example/app#" + "x".repeat(10_000)
+        assertEquals(long, AddressBarFilter.displayable(long))
+    }
+
+    @Test
+    fun `uppercase scheme is displayable`() {
+        assertEquals("HTTP://x.com", AddressBarFilter.displayable("HTTP://x.com"))
+    }
+
+    @Test
+    fun `URL with a control character is not displayable`() {
+        assertNull(AddressBarFilter.displayable("http://x\u0000"))
+    }
 }

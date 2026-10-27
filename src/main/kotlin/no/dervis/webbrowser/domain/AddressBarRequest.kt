@@ -32,22 +32,35 @@ sealed interface AddressBarRequest {
     companion object {
         private const val SEARCH_PREFIX = "https://www.startpage.com/do/search?q="
 
-        /** Classify a raw address-bar entry. Returns [None] when the input is blank. */
+        /**
+         * Classify a raw address-bar entry. Returns [None] when the input is blank,
+         * or when it looks like a URL or a local path that [Url.typed] rejects (such
+         * as `data:`, `ftp://` or `C:\Users\…`): that input is neither loaded nor
+         * sent to the search engine. Input that starts with `scheme://` is always
+         * treated as a URL; spaces in it are encoded, as browsers do.
+         */
         fun parse(raw: String): Option<AddressBarRequest> {
             val trimmed = raw.trim()
             if (trimmed.isEmpty()) return none()
-            return if (looksLikeUrl(trimmed)) {
-                Url.parse(trimmed).map(::Navigate)
-            } else {
-                val encoded = URLEncoder.encode(trimmed, StandardCharsets.UTF_8)
-                Url.parse("$SEARCH_PREFIX$encoded").map { Search(trimmed, it) }
+            return when {
+                Url.hasExplicitScheme(trimmed) -> Url.typed(trimmed.replace(" ", "%20")).map(::Navigate)
+                looksLikeUrl(trimmed) -> Url.typed(trimmed).map(::Navigate)
+                else -> Url.web("$SEARCH_PREFIX${URLEncoder.encode(trimmed, StandardCharsets.UTF_8)}")
+                    .map { Search(trimmed, it) }
             }
         }
 
+        /**
+         * What "Open in" hands to another browser: the address-bar entry when it gives
+         * an `http` or `https` URL, the [home] URL only when the address bar is empty,
+         * and nothing otherwise, so a typed `file://` page is never swapped for home.
+         */
+        fun externalTarget(addressBarText: String, home: Option<Url>): Option<Url> =
+            if (addressBarText.isBlank()) home else parse(addressBarText).flatMap { Url.web(it.target.value) }
+
         private fun looksLikeUrl(s: String): Boolean {
-            if ("://" in s) return true
             if (s.any { it.isWhitespace() }) return false
-            if ('/' in s) return true
+            if ('/' in s || '\\' in s) return true
             return runCatching {
                 val uri = URI("http://$s")
                 val host = uri.host

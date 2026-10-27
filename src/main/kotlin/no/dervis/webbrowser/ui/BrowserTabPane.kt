@@ -5,6 +5,7 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.ui.jcef.JBCefBrowser
 import no.dervis.webbrowser.domain.AddressBarFilter
 import no.dervis.webbrowser.domain.ConsoleMessage
+import no.dervis.webbrowser.domain.DisplayText
 import no.dervis.webbrowser.domain.TabId
 import no.dervis.webbrowser.domain.Url
 import no.dervis.webbrowser.domain.ViewSourceTransform
@@ -169,8 +170,9 @@ internal class BrowserTabPane(
                 // sensible default the tab strip can show.
                 val url = cefBrowser?.url.orEmpty()
                 val effective = when {
-                    url.startsWith("http://") || url.startsWith("https://") ->
-                        title?.takeIf { it.isNotBlank() } ?: FALLBACK_TAB_TITLE
+                    Url.live(url).isSome() ->
+                        title?.takeIf { DisplayText.clean(it).isNotEmpty() }
+                            ?: FALLBACK_TAB_TITLE
                     url.startsWith("view-source:") -> VIEW_SOURCE_TAB_TITLE
                     else -> FALLBACK_TAB_TITLE
                 }
@@ -274,7 +276,7 @@ internal class BrowserTabPane(
                 targetFrameName: String?,
             ): Boolean {
                 if (!targetUrl.isNullOrBlank()) {
-                    Url.parse(targetUrl).onSome { url ->
+                    Url.web(targetUrl).onSome { url ->
                         SwingUtilities.invokeLater { callbacks.onPopupRequested(id, url) }
                     }
                 }

@@ -1,10 +1,9 @@
 package no.dervis.webbrowser.domain
 
 /**
- * The "how to open" strategy derived from an [OpenRequest]. A pure sealed type
- * so the launcher's main dispatch (Immediate / Delayed / WhenReachable /
- * WhenAnnounced) is exhaustive, and the policy → strategy mapping can be tested
- * independently of the IntelliJ Application / process plumbing.
+ * How and when to open the browser after a run configuration starts, as decided
+ * by [OpenOnRunPolicy.resolve]. A pure sealed type so the launcher's dispatch is
+ * exhaustive. Each case carries a URL only when it needs one.
  */
 sealed interface LaunchSchedule {
 
@@ -19,16 +18,7 @@ sealed interface LaunchSchedule {
 
     /**
      * Read the run console and open the first [DevServerUrl] the server prints.
-     * Give up after [timeoutSeconds]. The configured URL isn't used.
+     * Give up after [timeoutSeconds]. No configured URL is involved.
      */
     data class WhenAnnounced(val timeoutSeconds: Int) : LaunchSchedule
-
-    companion object {
-        fun from(request: OpenRequest): LaunchSchedule = when (request.readiness) {
-            ReadinessMode.ON_LAUNCH -> Immediate(request.url)
-            ReadinessMode.AFTER_DELAY -> Delayed(request.url, request.waitSeconds)
-            ReadinessMode.WHEN_REACHABLE -> WhenReachable(request.url, request.waitSeconds)
-            ReadinessMode.WHEN_ANNOUNCED -> WhenAnnounced(request.waitSeconds)
-        }
-    }
 }

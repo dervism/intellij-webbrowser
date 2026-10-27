@@ -52,7 +52,19 @@ data class AddressBarHistory(
         const val DEFAULT_SUGGESTION_LIMIT = 8
         val EMPTY = AddressBarHistory(emptyList())
 
-        private fun isRecordable(url: String): Boolean =
-            url.isNotEmpty() && (url.startsWith("http://") || url.startsWith("https://"))
+        /**
+         * History rebuilt from stored entries, which a project file may have carried
+         * in: entries [Url.web] rejects and repeats (ignoring case) are dropped, and
+         * at most [DEFAULT_CAPACITY] are kept, most recent first.
+         */
+        fun of(raw: List<String>): AddressBarHistory =
+            AddressBarHistory(
+                raw.map(String::trim)
+                    .filter(::isRecordable)
+                    .distinctBy(String::lowercase)
+                    .take(DEFAULT_CAPACITY),
+            )
+
+        private fun isRecordable(url: String): Boolean = Url.web(url).isSome()
     }
 }

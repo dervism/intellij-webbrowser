@@ -21,6 +21,23 @@ class AddressBarHistoryTest {
     }
 
     @Test
+    fun `of drops non-web, control-character and duplicate entries`() {
+        val history = AddressBarHistory.of(listOf("http://a", "file:///x", "http://b\u0000", "HTTP://A"))
+        assertEquals(listOf("http://a"), history.entries)
+    }
+
+    @Test
+    fun `of keeps at most the capacity`() {
+        val urls = (1..80).map { "http://site$it.example" }
+        assertEquals(urls.take(50), AddressBarHistory.of(urls).entries)
+    }
+
+    @Test
+    fun `record accepts an uppercase scheme`() {
+        assertEquals(listOf("HTTPS://x.com"), AddressBarHistory.EMPTY.record("HTTPS://x.com").entries)
+    }
+
+    @Test
     fun `record dedupes existing entries case-insensitively`() {
         val h = AddressBarHistory.EMPTY
             .record("https://Example.com")

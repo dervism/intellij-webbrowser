@@ -14,11 +14,13 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.FormBuilder
 import com.intellij.util.ui.JBUI
+import no.dervis.webbrowser.domain.DisplayText
 import no.dervis.webbrowser.domain.ReadinessMode
 import no.dervis.webbrowser.domain.SettingsValidation
 import no.dervis.webbrowser.domain.WebBrowserSettingsSnapshot
 import no.dervis.webbrowser.settings.WebBrowserProjectSettings
 import no.dervis.webbrowser.settings.WebBrowserSettings
+import no.dervis.webbrowser.settings.WebBrowserWorkspaceState
 import java.awt.BorderLayout
 import java.awt.FlowLayout
 import javax.swing.JButton
@@ -75,13 +77,13 @@ class WebBrowserConfigurable(private val project: Project) : Configurable {
 
         // Address-bar autocomplete history — an immediate "Clear" action (it
         // doesn't go through Apply, since it's an action, not a stored setting).
-        val historyCount = JBLabel(historyCountText(proj)).apply { foreground = JBColor.GRAY }
+        val historyCount = JBLabel(historyCountText()).apply { foreground = JBColor.GRAY }
         historyCountLabel = historyCount
         val clearHistoryButton = JButton("Clear address-bar history").apply {
             toolTipText = "Forget every URL remembered for the address-bar autocomplete dropdown."
             addActionListener {
-                proj.clearAddressBarHistory()
-                historyCount.text = historyCountText(proj)
+                WebBrowserWorkspaceState.getInstance(project).clearAddressBarHistory()
+                historyCount.text = historyCountText()
             }
         }
         val historyRow = JPanel(FlowLayout(FlowLayout.LEFT, JBUI.scale(6), 0)).apply {
@@ -94,6 +96,16 @@ class WebBrowserConfigurable(private val project: Project) : Configurable {
 
         val configNames = listOf(ANY_CONFIG) + RunManager.getInstance(project).allSettings.map { it.name }
         val configCombo = ComboBox(configNames.toTypedArray()).also { runConfigCombo = it }
+        // Run-configuration names come from project files, so they're shown as plain text.
+        configCombo.renderer = object : SimpleListCellRenderer<String>() {
+            init {
+                putClientProperty("html.disable", true)
+            }
+
+            override fun customize(list: JList<out String>, value: String?, index: Int, selected: Boolean, hasFocus: Boolean) {
+                text = DisplayText.clean(value.orEmpty())
+            }
+        }
         configCombo.setMinimumAndPreferredWidth(JBUI.scale(280))
         // Keep a stored-but-deleted config name visible so the choice isn't lost.
         if (proj.runConfigName.isNotBlank() && proj.runConfigName !in configNames) {
@@ -190,8 +202,8 @@ class WebBrowserConfigurable(private val project: Project) : Configurable {
         SettingsValidation.Field.WATCH_PATTERNS -> watchPatternsArea
     }
 
-    private fun historyCountText(proj: WebBrowserProjectSettings): String =
-        when (val n = proj.addressBarHistorySize()) {
+    private fun historyCountText(): String =
+        when (val n = WebBrowserWorkspaceState.getInstance(project).addressBarHistorySize()) {
             0 -> "No remembered URLs."
             1 -> "1 remembered URL."
             else -> "$n remembered URLs."

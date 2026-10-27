@@ -9,7 +9,7 @@ import kotlin.test.assertTrue
 class ClosedTabHistoryTest {
 
     private fun entry(url: String, title: String = url) =
-        ClosedTabHistory.Entry(Url.parse(url).getOrNull()!!, title)
+        ClosedTabHistory.Entry(Url.web(url).getOrNull()!!, title)
 
     @Test
     fun `EMPTY is empty and has no top`() {

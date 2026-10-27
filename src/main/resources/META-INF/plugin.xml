@@ -52,6 +52,20 @@
 
     <!-- WHAT'S NEW: shown as the Marketplace "What's New" / change-notes section. -->
     <change-notes><![CDATA[
+        <h3>0.7.0</h3>
+        <ul>
+            <li><b>Security: one rule for every URL the plugin loads or hands to
+            the OS.</b> Popups, restored tabs, history, settings, open-on-run and
+            <i>Open in&hellip;</i> accept only <code>http</code> and
+            <code>https</code>. A typed <code>file://</code> URL still works.</li>
+            <li><b>Security: page titles and stored text are never rendered as
+            HTML</b> in tabs, tooltips or the history dropdown.</li>
+            <li><b>Tabs and history are now per user</b>, stored in the workspace
+            file instead of the shared project file. Existing ones are moved over
+            once.</li>
+            <li>Popups are ignored while 50 or more tabs are open; at most 100 tabs
+            are restored.</li>
+        </ul>
         <h3>0.6.0</h3>
         <ul>
             <li><b>New: open when the server prints its URL.</b> A new
@@ -253,6 +267,9 @@
     <depends>com.intellij.modules.jcef</depends>
 
     <extensions defaultExtensionNs="com.intellij">
+        <!-- Tells the user when a stored open-on-run URL is refused instead of failing silently. -->
+        <notificationGroup id="Web Browser Panel" displayType="BALLOON"/>
+
         <toolWindow
             id="Web Browser"
             anchor="right"

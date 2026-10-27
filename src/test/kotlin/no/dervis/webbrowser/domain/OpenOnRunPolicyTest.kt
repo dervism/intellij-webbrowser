@@ -15,6 +15,17 @@ class OpenOnRunPolicyTest {
         waitSeconds = 30,
     )
 
+    /** The URL a schedule opens, or null for the one mode that opens whatever the server prints. */
+    private fun urlOf(schedule: LaunchSchedule): String? = when (schedule) {
+        is LaunchSchedule.Immediate -> schedule.url.value
+        is LaunchSchedule.Delayed -> schedule.url.value
+        is LaunchSchedule.WhenReachable -> schedule.url.value
+        is LaunchSchedule.WhenAnnounced -> null
+    }
+
+    private fun OpenOnRunPolicy.scheduleFor(requested: String, fallback: String): LaunchSchedule =
+        resolve("FooApp", requested, fallback).fold(ifLeft = { fail("expected a schedule, got $it") }, ifRight = { it })
+
     // ---- isTriggeredBy ----
 
     @Test
@@ -61,6 +72,14 @@ class OpenOnRunPolicyTest {
     }
 
     @Test
+    fun `resolve returns NoValidUrl for a non-web requested URL`() {
+        enabledAnyConfig.resolve("FooApp", "file:///etc/hosts", "http://localhost:3000").fold(
+            ifLeft = { assertEquals(OpenRunSkip.NoValidUrl, it) },
+            ifRight = { fail("expected Left, got $it") },
+        )
+    }
+
+    @Test
     fun `resolve returns NoValidUrl when both requested and fallback URLs are blank`() {
         enabledAnyConfig.resolve("FooApp", "", "").fold(
             ifLeft = { assertEquals(OpenRunSkip.NoValidUrl, it) },
@@ -72,7 +91,7 @@ class OpenOnRunPolicyTest {
     fun `resolve prefers requestedUrl when given`() {
         enabledAnyConfig.resolve("FooApp", "http://requested:8080", "http://fallback:3000").fold(
             ifLeft = { fail("expected Right, got $it") },
-            ifRight = { request -> assertEquals("http://requested:8080", request.url.value) },
+            ifRight = { schedule -> assertEquals("http://requested:8080", urlOf(schedule)) },
         )
     }
 
@@ -80,27 +99,58 @@ class OpenOnRunPolicyTest {
     fun `resolve falls back to fallbackUrl when requestedUrl is blank`() {
         enabledAnyConfig.resolve("FooApp", "", "http://fallback:3000").fold(
             ifLeft = { fail("expected Right, got $it") },
-            ifRight = { request -> assertEquals("http://fallback:3000", request.url.value) },
+            ifRight = { schedule -> assertEquals("http://fallback:3000", urlOf(schedule)) },
         )
     }
 
+    // ---- readiness mode → launch schedule ----
+
     @Test
-    fun `resolve carries readiness and waitSeconds onto the OpenRequest`() {
-        val policy = enabledAnyConfig.copy(readiness = ReadinessMode.AFTER_DELAY, waitSeconds = 15)
-        policy.resolve("FooApp", "http://x:1", "").fold(
-            ifLeft = { fail("expected Right, got $it") },
-            ifRight = { request ->
-                assertEquals(ReadinessMode.AFTER_DELAY, request.readiness)
-                assertEquals(15, request.waitSeconds)
-            },
-        )
+    fun `ON_LAUNCH opens the URL immediately`() {
+        val schedule = enabledAnyConfig.copy(readiness = ReadinessMode.ON_LAUNCH).scheduleFor("http://x:1", "")
+        assertEquals(LaunchSchedule.Immediate(Url.web("http://x:1").getOrNull()!!), schedule)
+    }
+
+    @Test
+    fun `AFTER_DELAY opens the URL after the wait seconds`() {
+        val schedule = enabledAnyConfig.copy(readiness = ReadinessMode.AFTER_DELAY, waitSeconds = 15)
+            .scheduleFor("http://x:1", "")
+        assertEquals(LaunchSchedule.Delayed(Url.web("http://x:1").getOrNull()!!, 15), schedule)
+    }
+
+    @Test
+    fun `WHEN_REACHABLE polls the URL for up to the wait seconds`() {
+        val schedule = enabledAnyConfig.scheduleFor("http://x:1", "")
+        assertEquals(LaunchSchedule.WhenReachable(Url.web("http://x:1").getOrNull()!!, 30), schedule)
+    }
+
+    @Test
+    fun `WHEN_ANNOUNCED watches the console for up to the wait seconds`() {
+        val schedule = enabledAnyConfig.copy(readiness = ReadinessMode.WHEN_ANNOUNCED, waitSeconds = 45)
+            .scheduleFor("http://x:1", "")
+        assertEquals(LaunchSchedule.WhenAnnounced(45), schedule)
+    }
+
+    @Test
+    fun `When the server prints its URL needs no open or home URL`() {
+        val announced = enabledAnyConfig.copy(readiness = ReadinessMode.WHEN_ANNOUNCED)
+        assertEquals(LaunchSchedule.WhenAnnounced(30), announced.scheduleFor("", ""))
+        assertEquals(LaunchSchedule.WhenAnnounced(30), announced.scheduleFor("", "file:///etc/hosts"))
+        assertEquals(LaunchSchedule.WhenAnnounced(30), announced.scheduleFor("ftp://x", "http://ok"))
+    }
+
+    @Test
+    fun `every readiness mode resolves to a schedule`() {
+        ReadinessMode.entries.forEach { mode ->
+            enabledAnyConfig.copy(readiness = mode).scheduleFor("http://x:1", "")
+        }
     }
 
     @Test
     fun `resolve normalizes the URL by adding the http scheme when missing`() {
         enabledAnyConfig.resolve("FooApp", "localhost:3000", "").fold(
             ifLeft = { fail("expected Right, got $it") },
-            ifRight = { request -> assertEquals("http://localhost:3000", request.url.value) },
+            ifRight = { schedule -> assertEquals("http://localhost:3000", urlOf(schedule)) },
         )
     }
 

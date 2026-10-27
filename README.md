@@ -17,7 +17,7 @@ The plugin was purpose built for my own needs, because I wanted to stay in my ed
 
 ### Browse
 - **Embedded browser** — a Chromium (JCEF) view in a right-dock **Web Browser** tool window, with back / forward / reload, an editable address bar, and **zoom in / out / reset**.
-- **Tabs** — open multiple pages side by side; `target="_blank"` links open in a new tab instead of escaping to an external window. Drag tabs to reorder, **pin** important ones to keep them across restarts, right-click for *Pin / Close / Close Other*, and use **Ctrl+Tab / Ctrl+Shift+Tab** to cycle. Closed tabs can be reopened, and your full tab session is restored when the project re-opens.
+- **Tabs** — open multiple pages side by side; `target="_blank"` links open in a new tab instead of escaping to an external window. Drag tabs to reorder, **pin** important ones to keep them across restarts, right-click for *Pin / Close / Close Other*, and use **Ctrl+Tab / Ctrl+Shift+Tab** to cycle. Closed tabs can be reopened, and your tab session is restored when the project re-opens. Tabs and history are stored per user, in the project's workspace file, so they aren't shared through version control.
 - **Smart address bar** — typing a URL navigates; typing a phrase runs a Startpage search. Clicking into the field selects the whole address, so you can immediately retype it. **History-backed autocomplete** suggests previously visited URLs from this project as you type (arrow keys / Enter / Esc); the history can be cleared from settings.
 - **Find in page** — Ctrl/Cmd+F opens an inline find bar with next / previous and Esc-to-close.
 - **DevTools** — open Chromium DevTools in its own window from the settings row, the page's right-click menu, or with F12.
@@ -26,7 +26,7 @@ The plugin was purpose built for my own needs, because I wanted to stay in my ed
 - **Themed empty state** — a clean, theme-aware SVG screen before anything loads and when a page fails to load, in place of Chromium's raw error page.
 - **Right-click menu** — Chromium's standard context menu, plus an **Open DevTools** item and a **Zoom** submenu. **View Page Source** opens in a new tab so you can close it to dismiss source view.
 - **Per-host zoom memory** — adjust zoom on a site and it's restored automatically next time you visit the same host.
-- **Open in…** — hand the current page to your system default browser, or any browser configured under *Settings → Tools → Web Browsers*.
+- **Open in…** — hand the current page to your system default browser, or any browser configured under *Settings → Tools → Web Browsers*. Only http and https pages can be handed over.
 
 ### Live reload
 - **Reload on save** — reload when a watched file is saved (⌘S or IntelliJ autosave). Pick the **folder** to watch (default: the whole project) and the **extensions** (default: common web files like `html, css, scss, js, ts, jsx, tsx, vue, svelte`).
@@ -43,7 +43,7 @@ The plugin was purpose built for my own needs, because I wanted to stay in my ed
 ### Configuration
 The settings page lives under *Settings → Tools → Web Browser Panel*, in three groups:
 
-- **URLs & history** — the **default home / dev-server URL** (application-wide, `http://localhost:3000` out of the box) and an optional **per-project home URL** that overrides it. **Clear address-bar history** forgets the autocomplete suggestions (with a live count of how many are stored).
+- **URLs & history** — the **default home / dev-server URL** (application-wide, `http://localhost:3000` out of the box) and an optional **per-project home URL** that overrides it. Home and open-on-run URLs must be http or https URLs; a bare `localhost:3000` is fine. **Clear address-bar history** forgets the autocomplete suggestions (with a live count of how many are stored).
 - **Reload on save** — the **folder** to watch (default: the whole project) and the file **extensions**, or — for finer control — newline-separated **watch patterns** (globs like `/project/src/**/*.{ts,tsx}`) that override the folder + extensions when set.
 - **Open browser on run** — enable opening the panel when a run configuration starts, then choose **which** configuration (or *Any*), the **URL** (blank = home), and **when** to open (the URL is reachable / the server prints its URL / after a delay / immediately).
 

@@ -4,6 +4,44 @@ All notable changes to the **Web Browser Panel** IntelliJ plugin are recorded
 here. The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions match the artifact published to the JetBrains Marketplace.
 
+## [0.7.0] — 2026-10
+
+### Security
+- **One rule for every URL the plugin loads or hands to the OS.** Popups,
+  restored tabs, history, settings, open-on-run and *Open in…* accept only
+  `http` and `https`. A `file://` URL still works when you type it in the
+  address bar or open it with *Open URL in Web Browser Panel*. Other schemes
+  (`javascript:`, `data:`, `ftp:` and so on) are refused, and a scheme is only
+  read from the start of the input.
+- **Text from pages and project files is never rendered as HTML.** Tab titles,
+  their tooltips, the history dropdown and the run-configuration list show text
+  as it is, with control, bidi and zero-width characters removed.
+- **Limits on tabs that input you didn't choose can create.** Popups are ignored
+  while 50 or more tabs are open, and at most 100 tabs are restored.
+- **Stored tabs, history and settings are checked when read.** A stored home or
+  open-on-run URL that isn't http or https is refused with a notification
+  instead of failing silently, and *Apply* refuses one in settings.
+- Logs show only the scheme, host and port of a URL.
+
+### Changed
+- **Tabs and address-bar history are now per user.** They're stored in the
+  project's workspace file instead of the shared `.idea/intellijWebBrowser.xml`,
+  so they no longer end up in version control. The first time 0.7.0 opens a
+  project, existing tabs (at most 20) and history are checked, moved over, and
+  removed from the shared file.
+- *Open in…* hands only http and https pages to another browser.
+- In the address bar, a typed local path (`/Users/…`, `C:\…`) is neither loaded
+  nor searched, and a typed `http://` URL with spaces loads with the spaces
+  encoded.
+- A page title made only of invisible characters shows as "New Tab".
+- *When the server prints its URL* no longer needs a valid open or home URL, since
+  it never uses them.
+
+### Fixed
+- Restored tabs keep their pins on the right tabs. Before, a dropped entry
+  shifted the pin to the next tab.
+- `localhost:3000/?r=http://x` is read as a host with a query, not as a URL.
+
 ## [0.6.0] — 2026-10
 
 ### Added

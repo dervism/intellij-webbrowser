@@ -119,4 +119,78 @@ class AddressBarRequestTest {
         // Sealed variants must not equal each other even when the target overlaps in shape.
         assertTrue(nav != search)
     }
+
+    // ---- scheme rules -----------------------------------------------------------
+
+    @Test
+    fun `a typed URL with spaces navigates with the spaces encoded`() {
+        val request = AddressBarRequest.parse("http://localhost:3000/my page.html").getOrNull()
+        assertTrue(request is AddressBarRequest.Navigate, "expected Navigate, got $request")
+        assertEquals("http://localhost:3000/my%20page.html", request.target.value)
+    }
+
+    @Test
+    fun `a local path is neither loaded nor searched`() {
+        assertTrue(AddressBarRequest.parse("/Users/me/index.html").isNone())
+        assertTrue(AddressBarRequest.parse("C:\\Users\\me\\index.html").isNone())
+    }
+
+    @Test
+    fun `IPv6 and international hosts navigate`() {
+        val ipv6 = AddressBarRequest.parse("[::1]:3000").getOrNull()
+        assertTrue(ipv6 is AddressBarRequest.Navigate, "expected Navigate, got $ipv6")
+        assertEquals("http://[::1]:3000", ipv6.target.value)
+        val idn = AddressBarRequest.parse("bücher.example/straße").getOrNull()
+        assertTrue(idn is AddressBarRequest.Navigate, "expected Navigate, got $idn")
+        assertEquals("http://bücher.example/straße", idn.target.value)
+    }
+
+    // ---- "Open in" target ----------------------------------------------------------
+
+    private val home = Url.web("http://localhost:3000")
+
+    private fun external(text: String) = AddressBarRequest.externalTarget(text, home).getOrNull()?.value
+
+    @Test
+    fun `external target is the home URL only when the address bar is empty`() {
+        assertEquals("http://localhost:3000", external("  "))
+    }
+
+    @Test
+    fun `external target is the address-bar URL when it is http or https`() {
+        assertEquals("http://example.com", external("example.com"))
+        assertEquals("https://www.startpage.com/do/search?q=some+words", external("some words"))
+    }
+
+    @Test
+    fun `external target refuses a non-web address-bar entry instead of using the home URL`() {
+        assertEquals(null, external("file:///tmp/a.html"))
+        assertEquals(null, external("ftp://x.com"))
+    }
+
+    @Test
+    fun `scheme in the query string does not count as a scheme`() {
+        val request = AddressBarRequest.parse("localhost:3000/?r=http://x").getOrNull()
+        assertTrue(request is AddressBarRequest.Navigate, "expected Navigate, got $request")
+        assertEquals("http://localhost:3000/?r=http://x", request.target.value)
+    }
+
+    @Test
+    fun `typed file URL navigates`() {
+        val request = AddressBarRequest.parse("file:///tmp/a.html").getOrNull()
+        assertTrue(request is AddressBarRequest.Navigate, "expected Navigate, got $request")
+        assertEquals("file:///tmp/a.html", request.target.value)
+    }
+
+    @Test
+    fun `URL-looking input with a rejected scheme gives None`() {
+        assertTrue(AddressBarRequest.parse("data:text/html,x").isNone())
+        assertTrue(AddressBarRequest.parse("ftp://x.com").isNone())
+    }
+
+    @Test
+    fun `javascript input is searched, not navigated`() {
+        val request = AddressBarRequest.parse("javascript:alert(1)").getOrNull()
+        assertTrue(request is AddressBarRequest.Search, "expected Search, got $request")
+    }
 }

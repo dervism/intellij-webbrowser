@@ -8,10 +8,8 @@ package no.dervis.webbrowser.domain
  *
  * Only http(s) URLs are restorable: a tab that was showing the placeholder, a
  * `view-source:` view, or a `data:` URL is silently dropped on capture, since
- * none of those have meaningful "go back to that page" semantics.
- *
- * The active index is clamped to a valid range on rebuild so a stale or
- * truncated session can never select an out-of-bounds tab.
+ * none of those have meaningful "go back to that page" semantics. Stored
+ * entries are checked again on restore, because the stored file can be edited.
  */
 data class TabSession(
     val urls: List<String>,
@@ -21,17 +19,27 @@ data class TabSession(
 
     val isEmpty: Boolean get() = urls.isEmpty()
 
-    /** Resolved Url values for each persisted entry, in tab order. */
-    fun resolvedUrls(): List<Url> = urls.mapNotNull { Url.parse(it).getOrNull() }
-
-    /** Whether the persisted url at [index] should be restored as pinned. */
-    fun isPinnedAt(index: Int): Boolean =
-        urls.getOrNull(index)?.let { it in pinnedUrls } ?: false
-
-    /** Active index clamped into the valid range; `-1` when the session is empty. */
-    fun safeActiveIndex(): Int = when {
-        urls.isEmpty() -> -1
-        else -> activeIndex.coerceIn(0, urls.size - 1)
+    /**
+     * The tabs to recreate, in order. Entries [Url.web] rejects are dropped, and the
+     * pin flags and the active tab stay with the entries they belong to. At most
+     * [TabLimits.MAX_RESTORED_TABS] tabs come back. When the active entry was dropped,
+     * cut off or never valid, the first tab becomes active; with no tabs it is -1.
+     */
+    fun restorePlan(): RestorePlan {
+        val kept = urls.withIndex()
+            .mapNotNull { (index, raw) ->
+                Url.web(raw).getOrNull()?.let { IndexedValue(index, RestoredTab(it, raw in pinnedUrls)) }
+            }
+            .take(TabLimits.MAX_RESTORED_TABS)
+        val active = kept.indexOfFirst { it.index == activeIndex }
+        return RestorePlan(
+            tabs = kept.map { it.value },
+            activeIndex = when {
+                kept.isEmpty() -> -1
+                active >= 0 -> active
+                else -> 0
+            },
+        )
     }
 
     companion object {
@@ -61,7 +69,12 @@ data class TabSession(
             return TabSession(kept, active, pinnedRawUrls.filter(::isRestorable).toSet())
         }
 
-        private fun isRestorable(url: String): Boolean =
-            url.startsWith("http://") || url.startsWith("https://")
+        private fun isRestorable(url: String): Boolean = Url.web(url).isSome()
     }
 }
+
+/** One tab to recreate on restore. */
+data class RestoredTab(val url: Url, val pinned: Boolean)
+
+/** The tabs to recreate, and which of them to activate (-1 when there are none). */
+data class RestorePlan(val tabs: List<RestoredTab>, val activeIndex: Int)

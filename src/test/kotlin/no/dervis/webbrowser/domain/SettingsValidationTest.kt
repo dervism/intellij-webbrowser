@@ -72,9 +72,40 @@ class SettingsValidationTest {
 
     @Test
     fun `localhost-with-port-only homeUrl is accepted`() {
-        // Url.parse defaults the scheme to http://, so bare host:port works
+        // Url.web adds http:// to a bare host, so host:port works
         // exactly the way it does in the address bar.
         assertTrue(SettingsValidation.validate(snapshot(homeUrl = "localhost:5173")).isEmpty())
+    }
+
+    @Test
+    fun `non-web home, project home and open URLs are refused`() {
+        val fields: List<Pair<SettingsValidation.Field, (String) -> WebBrowserSettingsSnapshot>> = listOf(
+            SettingsValidation.Field.HOME_URL to { url -> snapshot(homeUrl = url) },
+            SettingsValidation.Field.PROJECT_HOME_URL to { url -> snapshot(projectHomeUrl = url) },
+            SettingsValidation.Field.OPEN_URL to { url -> snapshot(openUrl = url) },
+        )
+        listOf("file:///etc/hosts", "ftp://x", "javascript:alert(1)").forEach { url ->
+            fields.forEach { (field, withUrl) ->
+                assertEquals(
+                    listOf(SettingsValidation.Issue(field, "Use an http:// or https:// URL.")),
+                    SettingsValidation.validate(withUrl(url)),
+                    "$field = $url",
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `an http URL that is invalid for another reason gets its own message`() {
+        assertEquals(
+            listOf(
+                SettingsValidation.Issue(
+                    SettingsValidation.Field.OPEN_URL,
+                    "Not a valid URL: remove any spaces and keep it under 8192 characters.",
+                ),
+            ),
+            SettingsValidation.validate(snapshot(openUrl = "http://localhost:3000/a b")),
+        )
     }
 
     @Test

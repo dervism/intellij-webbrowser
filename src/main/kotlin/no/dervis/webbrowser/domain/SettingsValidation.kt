@@ -45,15 +45,14 @@ object SettingsValidation {
         if (trimmed.isEmpty()) {
             return if (required) Issue(field, "URL can't be empty.") else null
         }
-        // Url.parse is permissive (defaults scheme to http://) — that's the
-        // shape we use everywhere else, so accepting "localhost:3000" here
-        // matches the address-bar behaviour. The only failure mode is when
-        // the resulting Url string can't be normalised at all, which would
-        // mean a null Option from parse. parse never returns None for
-        // non-blank input today; the explicit None check is here so any
-        // future stricter parse change still yields a clean error.
-        if (Url.parse(trimmed).getOrNull() == null) {
-            return Issue(field, "Not a recognisable URL.")
+        // Url.web adds http:// to a bare host, so "localhost:3000" is accepted
+        // here as it is in the address bar. Any other scheme is refused.
+        if (Url.web(trimmed).isNone()) {
+            return Issue(
+                field,
+                if (Url.hasNonWebScheme(trimmed)) "Use an http:// or https:// URL."
+                else "Not a valid URL: remove any spaces and keep it under ${Url.MAX_LENGTH} characters.",
+            )
         }
         return null
     }

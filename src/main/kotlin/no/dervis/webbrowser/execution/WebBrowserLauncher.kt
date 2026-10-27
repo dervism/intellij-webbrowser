@@ -12,7 +12,6 @@ import com.intellij.openapi.util.registry.Registry
 import com.intellij.util.concurrency.AppExecutorUtil
 import no.dervis.webbrowser.WebBrowserController
 import no.dervis.webbrowser.domain.LaunchSchedule
-import no.dervis.webbrowser.domain.OpenRequest
 import no.dervis.webbrowser.domain.Url
 import org.jetbrains.ide.BuiltInServerManager
 import java.net.InetAddress
@@ -21,8 +20,8 @@ import java.net.Socket
 import java.util.concurrent.TimeUnit
 
 /**
- * Carries out an [OpenRequest]: decides *when* to open (per the readiness mode),
- * then hands off to [WebBrowserController]. The only effectful piece in the flow.
+ * Carries out a [LaunchSchedule]: waits as the schedule says, then hands off to
+ * [WebBrowserController]. The only effectful piece in the flow.
  */
 object WebBrowserLauncher {
 
@@ -34,8 +33,8 @@ object WebBrowserLauncher {
     private val BUILT_IN_SERVER_PORTS = 63342..63361
     private val WATCHED = Key.create<Boolean>("no.dervis.webbrowser.devServerUrlWatch")
 
-    fun scheduleOpen(project: Project, request: OpenRequest, handler: ProcessHandler) {
-        when (val schedule = LaunchSchedule.from(request)) {
+    fun scheduleOpen(project: Project, schedule: LaunchSchedule, handler: ProcessHandler) {
+        when (schedule) {
             is LaunchSchedule.Immediate ->
                 openLater(project, schedule.url)
 
@@ -58,7 +57,7 @@ object WebBrowserLauncher {
     private fun pollThenOpen(project: Project, url: Url, timeoutSeconds: Int, handler: ProcessHandler) {
         val host = url.host
         if (host == null) {
-            log.warn("No host parsable from $url — opening immediately")
+            log.warn("No host parsable from ${url.redacted} — opening immediately")
             openLater(project, url)
             return
         }
@@ -72,7 +71,7 @@ object WebBrowserLauncher {
                     return@executeOnPooledThread
                 }
                 if (canConnect(host, port)) {
-                    log.info("$host:$port is reachable — opening $url")
+                    log.info("$host:$port is reachable — opening it")
                     openLater(project, url)
                     return@executeOnPooledThread
                 }

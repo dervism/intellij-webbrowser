@@ -7,6 +7,7 @@ import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
+import no.dervis.webbrowser.domain.DisplayText
 import no.dervis.webbrowser.domain.TabId
 import java.awt.BorderLayout
 import java.awt.CardLayout
@@ -272,7 +273,6 @@ internal class BrowserTabStrip(private val callbacks: Callbacks) {
         }
         var pinned = false; private set
         private var hovered = false
-        private var fullTitle = ""
 
         init {
             isOpaque = false
@@ -281,6 +281,8 @@ internal class BrowserTabStrip(private val callbacks: Callbacks) {
             // active/hover backgrounds below (the platform's underlinedTab* pair
             // came out invisible in some themes).
             titleLabel.foreground = JBColor.foreground()
+            // Page titles are page-controlled: never let a title starting with <html> render as HTML.
+            titleLabel.putClientProperty("html.disable", true)
             add(titleLabel, BorderLayout.CENTER)
             add(closeButton, BorderLayout.EAST)
             val mouse = object : MouseAdapter() {
@@ -313,9 +315,8 @@ internal class BrowserTabStrip(private val callbacks: Callbacks) {
         }
 
         fun setTitle(title: String) {
-            fullTitle = title
-            titleLabel.text = ellipsize(title)
-            titleLabel.toolTipText = title
+            titleLabel.text = ellipsize(DisplayText.clean(title))
+            titleLabel.toolTipText = DisplayText.htmlTooltip(title)
         }
 
         fun setPinned(value: Boolean) {

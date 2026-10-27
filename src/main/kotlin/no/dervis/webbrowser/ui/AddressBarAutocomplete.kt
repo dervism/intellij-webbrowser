@@ -2,14 +2,17 @@ package no.dervis.webbrowser.ui
 
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.ui.popup.JBPopupFactory
+import com.intellij.ui.ColoredListCellRenderer
 import com.intellij.ui.components.JBList
 import com.intellij.util.ui.JBUI
 import no.dervis.webbrowser.domain.AddressBarHistory
+import no.dervis.webbrowser.domain.DisplayText
 import java.awt.event.FocusAdapter
 import java.awt.event.FocusEvent
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import javax.swing.DefaultListModel
+import javax.swing.JList
 import javax.swing.JTextField
 import javax.swing.SwingUtilities
 import javax.swing.event.DocumentEvent
@@ -37,7 +40,21 @@ internal class AddressBarAutocomplete(
 ) {
 
     private val model = DefaultListModel<String>()
-    private val list = JBList(model)
+    private val list = JBList(model).apply {
+        // History entries come from settings a project file can carry; a coloured
+        // renderer never interprets them as HTML.
+        cellRenderer = object : ColoredListCellRenderer<String>() {
+            override fun customizeCellRenderer(
+                list: JList<out String>,
+                value: String?,
+                index: Int,
+                selected: Boolean,
+                hasFocus: Boolean,
+            ) {
+                append(DisplayText.clean(value.orEmpty()))
+            }
+        }
+    }
     private var popup: JBPopup? = null
     private var suppressDocumentListener = false
 

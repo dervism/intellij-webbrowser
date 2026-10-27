@@ -6,14 +6,15 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import no.dervis.webbrowser.domain.AddressBarHistory
+import no.dervis.webbrowser.domain.LegacyBrowsingData
 import no.dervis.webbrowser.domain.OpenOnRunPolicy
 import no.dervis.webbrowser.domain.ReadinessMode
-import no.dervis.webbrowser.domain.TabSession
 
 /**
  * Project-level settings: the reload-on-save folder, and the "open the browser
- * when a run configuration starts" trigger. Stored in .idea/intellijWebBrowser.xml.
+ * when a run configuration starts" trigger. Stored in .idea/intellijWebBrowser.xml,
+ * which teams often commit, so it holds only settings meant to be shared. The tab
+ * session and address-bar history live in [WebBrowserWorkspaceState] instead.
  *
  * Persists primitives (for IDE serialization) but exposes domain types.
  */
@@ -30,13 +31,14 @@ class WebBrowserProjectSettings : PersistentStateComponent<WebBrowserProjectSett
         var openUrl: String = "",
         var readinessMode: String = ReadinessMode.DEFAULT.storageId,
         var readinessSeconds: Int = DEFAULT_WAIT_SECONDS,
-        // Restored on next tool-window open. Plain mutable types — the IDE's
-        // XML serializer can't round-trip Kotlin's read-only collection types.
+        // Tab session and history from versions before 0.7.0, under their old
+        // names so existing files still load. Read once by takeLegacyBrowsingData
+        // and then reset, which drops them from the shared file on the next save.
+        // Plain mutable types — the IDE's XML serializer can't round-trip Kotlin's
+        // read-only collection types.
         var persistedTabUrls: ArrayList<String> = ArrayList(),
         var persistedActiveIndex: Int = 0,
         var persistedPinnedUrls: ArrayList<String> = ArrayList(),
-        // Address-bar autocomplete history, MRU first. Bounded by
-        // [AddressBarHistory.DEFAULT_CAPACITY] when written.
         var addressBarHistory: ArrayList<String> = ArrayList(),
     )
 
@@ -92,38 +94,23 @@ class WebBrowserProjectSettings : PersistentStateComponent<WebBrowserProjectSett
     fun openOnRunPolicy(): OpenOnRunPolicy =
         OpenOnRunPolicy(openOnRun, runConfigName.trim(), readiness, readinessSeconds)
 
-    /** Read the persisted tab session, ready to be replayed on tool-window open. */
-    fun tabSession(): TabSession =
-        TabSession(
-            state.persistedTabUrls.toList(),
-            state.persistedActiveIndex,
-            state.persistedPinnedUrls.toSet(),
-        )
-
-    /** Persist the current tabs so the next IDE / project open can restore them. */
-    fun saveTabSession(session: TabSession) {
-        state.persistedTabUrls = ArrayList(session.urls)
-        state.persistedActiveIndex = session.activeIndex
-        state.persistedPinnedUrls = ArrayList(session.pinnedUrls)
-    }
-
-    /** Current address-bar history snapshot. */
-    fun addressBarHistory(): AddressBarHistory =
-        AddressBarHistory(state.addressBarHistory.toList())
-
-    /** Push [url] onto the per-project address-bar history (MRU). */
-    fun recordAddressBarUrl(url: String) {
-        val updated = addressBarHistory().record(url)
-        state.addressBarHistory = ArrayList(updated.entries)
-    }
-
-    /** Number of URLs currently remembered for address-bar autocomplete. */
-    fun addressBarHistorySize(): Int = state.addressBarHistory.size
-
-    /** Forget every remembered address-bar URL. */
-    fun clearAddressBarHistory() {
-        state.addressBarHistory = ArrayList()
-    }
+    /**
+     * The tab session and history older versions stored here, returned and then
+     * reset to their defaults so they leave the shared file on the next save.
+     * [WebBrowserWorkspaceState] calls this once per user to move them over.
+     */
+    fun takeLegacyBrowsingData(): LegacyBrowsingData =
+        LegacyBrowsingData(
+            tabUrls = state.persistedTabUrls.toList(),
+            activeIndex = state.persistedActiveIndex,
+            pinnedUrls = state.persistedPinnedUrls.toSet(),
+            history = state.addressBarHistory.toList(),
+        ).also {
+            state.persistedTabUrls = ArrayList()
+            state.persistedActiveIndex = 0
+            state.persistedPinnedUrls = ArrayList()
+            state.addressBarHistory = ArrayList()
+        }
 
     override fun getState(): State = state
 
