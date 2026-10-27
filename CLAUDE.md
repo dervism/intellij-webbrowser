@@ -34,7 +34,7 @@ Known issue: with the local IntelliJ IDEA 2026.2.3 (build 262.10968.63), every t
 
 ## Commits and pull requests
 
-The code owner is the only author. Never add a `Co-Authored-By: Claude ...` trailer to a commit message or a "Generated with Claude Code" line to a pull request description.
+Never add a `Co-Authored-By: Claude ...` trailer to a commit message or a "Generated with Claude Code" line to a pull request description.
 
 ## Method
 
