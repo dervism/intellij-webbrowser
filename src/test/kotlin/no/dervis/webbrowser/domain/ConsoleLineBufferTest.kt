@@ -49,6 +49,18 @@ class ConsoleLineBufferTest {
     }
 
     @Test
+    fun `the unfinished line is the text after the last line end`() {
+        val (buffer, _) = ConsoleLineBuffer().append("done\nLocal: http://localhost:51")
+        assertEquals("Local: http://localhost:51", buffer.unfinishedLine())
+        assertEquals(null, ConsoleLineBuffer().append("done\n").first.unfinishedLine())
+    }
+
+    @Test
+    fun `there is no unfinished line while an overlong line is dropped`() {
+        assertEquals(null, ConsoleLineBuffer().append("x".repeat(5000)).first.unfinishedLine())
+    }
+
+    @Test
     fun `keeps dropping an overlong line across several chunks`() {
         val (first, _) = ConsoleLineBuffer().append("x".repeat(5000))
         val (second, middle) = first.append(" http://localhost:1/")

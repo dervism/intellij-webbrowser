@@ -52,6 +52,13 @@
 
     <!-- WHAT'S NEW: shown as the Marketplace "What's New" / change-notes section. -->
     <change-notes><![CDATA[
+        <h3>0.7.1</h3>
+        <ul>
+            <li><b>Fix:</b> <i>When the server prints its URL</i> now finds a URL
+            printed without a line break, once the output pauses.</li>
+            <li><b>Fix:</b> <code>http://[::1]</code> with no port, and URLs followed by a
+            non-breaking space or a Unicode line separator, are now recognised.</li>
+        </ul>
         <h3>0.7.0</h3>
         <ul>
             <li><b>Security: one rule for every URL the plugin loads or hands to

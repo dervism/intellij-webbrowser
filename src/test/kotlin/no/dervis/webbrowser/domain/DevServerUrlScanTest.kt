@@ -188,6 +188,108 @@ class DevServerUrlScanTest {
         fail("20,000 one-character chunks should use up the budget")
     }
 
+    // ---- IPv6 brackets ----------------------------------------------------------
+
+    @Test
+    fun `keeps the bracket that closes an IPv6 host`() {
+        assertEquals("http://[::1]/", scan(stdout("Listening on http://[::1]\n")))
+        assertEquals("http://[::1]/", scan(stdout("Listening (http://[::1])\n")))
+        assertEquals("http://[::1]/", scan(stdout("Listening on http://[::1]]\n")))
+    }
+
+    @Test
+    fun `never adds a bracket to a cut-off IPv6 host`() {
+        assertEquals(null, scan(stdout("Listening on http://[::1\n")))
+    }
+
+    // ---- Unicode whitespace ------------------------------------------------------
+
+    private fun char(code: Int) = Char(code).toString()
+
+    @Test
+    fun `a non-breaking space or line separator ends a word`() {
+        listOf(0x00A0, 0x2028, 0x2029).forEach { code ->
+            assertEquals(
+                "http://localhost:5173/",
+                scan(stdout("Local: http://localhost:5173/${char(code)}(ready)\n")),
+                "U+%04X must separate words".format(code),
+            )
+        }
+    }
+
+    @Test
+    fun `a line separator inside a hidden payload does not expose it`() {
+        val link = "$esc]8;;${char(0x2028)} http://localhost:1/$esc\\ visible\n"
+        assertEquals(null, scan(stdout(link)))
+    }
+
+    // ---- unfinished last line ------------------------------------------------------
+
+    private fun fedWith(vararg chunks: Pair<ConsoleStream, String>): DevServerUrlScan =
+        chunks.fold(DevServerUrlScan.start(emptySet())) { current, (stream, text) ->
+            when (val step = current.feed(stream, text)) {
+                is Step.Continue -> step.scan
+                else -> fail("expected the scan to continue, got $step")
+            }
+        }
+
+    @Test
+    fun `scanTail finds a URL printed without a line end`() {
+        assertEquals("http://localhost:5173/", fedWith(stdout("Local: http://localhost:5173/")).scanTail(STDOUT)?.url?.value)
+    }
+
+    @Test
+    fun `scanTail ignores a last word that ends in a colon`() {
+        assertEquals(null, fedWith(stdout("Local: http://localhost:")).scanTail(STDOUT))
+    }
+
+    @Test
+    fun `scanTail ignores a tail that ends inside an escape sequence`() {
+        assertEquals(null, fedWith(stdout("Local: http://localhost:51$esc[1")).scanTail(STDOUT))
+        assertEquals(null, fedWith(stdout("Local: http://localhost:51$esc")).scanTail(STDOUT))
+        assertEquals(null, fedWith(stdout("$esc]8;; http://localhost:1/")).scanTail(STDOUT))
+        assertEquals(null, fedWith(stdout("Local: http://localhost:5173/ $esc]8;;")).scanTail(STDOUT))
+    }
+
+    @Test
+    fun `scanTail reads a tail whose escape is already decided`() {
+        assertEquals(
+            "http://localhost:5173/",
+            fedWith(stdout("Local: http://localhost:5173/ $esc${Char(0x2028)}")).scanTail(STDOUT)?.url?.value,
+        )
+    }
+
+    @Test
+    fun `scanTail reads a URL inside an opening bracket`() {
+        assertEquals("http://localhost:5173/", fedWith(stdout("Local: [http://localhost:5173/")).scanTail(STDOUT)?.url?.value)
+    }
+
+    @Test
+    fun `scanTail leaves the unfinished line for the rest to complete`() {
+        val cut = fedWith(stdout("Local: http://localhost:"))
+        assertEquals(null, cut.scanTail(STDOUT))
+        val step = cut.feed(STDOUT, "5173/\n")
+        assertTrue(step is Step.Found && step.url.url.value == "http://localhost:5173/", "got $step")
+    }
+
+    @Test
+    fun `scanTail reads only the given stream`() {
+        val split = fedWith(stdout("Local: http://local"), STDERR to "host:5173/")
+        assertEquals(null, split.scanTail(STDOUT))
+        assertEquals(null, split.scanTail(STDERR))
+    }
+
+    @Test
+    fun `scanTail skips a line that is being dropped as too long`() {
+        assertEquals(null, fedWith(stdout("x".repeat(5000)), stdout(" http://localhost:5173/")).scanTail(STDOUT))
+    }
+
+    @Test
+    fun `scanTail of a stream with nothing unfinished is nothing`() {
+        assertEquals(null, fedWith(stdout("compiling...\n")).scanTail(STDOUT))
+        assertEquals(null, DevServerUrlScan.start(emptySet()).scanTail(STDERR))
+    }
+
     @Test
     fun `keeps scanning while under budget`() {
         val step = DevServerUrlScan.start(emptySet()).feed(STDOUT, "compiling...\n")

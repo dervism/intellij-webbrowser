@@ -31,6 +31,7 @@ Known issue: with the local IntelliJ IDEA 2026.2.3 (build 262.10968.63), every t
 
 1. After a feature or fix is built, changed or removed, update CHANGELOG.md, README.md and ROADMAP.md. Verify the claims in the files with the current state of the source code and the plugins features.
 2. Use the humanizer skill to clean up and simplify the generated text in the documentation and all comments in the source code.
+3. Parked items go to [PARKED_ITEMS.md](PARKED_ITEMS.md), whatever the reason for parking them: what the item is, why it was parked, and what picking it up again would take. Remove a parked item from ROADMAP.md, and move it back to ROADMAP.md when the reason no longer holds.
 
 ## Commits and pull requests
 
@@ -40,7 +41,7 @@ Never add a `Co-Authored-By: Claude ...` trailer to a commit message or a "Gener
 
 1. Use the ROADMAP to select the next item to work on
 2. Before a feature is built, ask an Opus 5.5 sub-agent with no context or history, xhigh effort and available security skills to review the security of both the planned feature and the security implications of adding the feature to the plugin. Give the agent the feature description and the existing code the feature will touch. The `security-review` skill only reviews changes already on the branch, and before the feature is built there are none.
-3. If the security agent finds critical issues - stop the process, and recommend how to proceed: do not continue (feature is not added or built), fix the issues the security agent found, or park the feature for later with a notice in the ROADMAP.md file.
+3. If the security agent finds critical issues - stop the process, and recommend how to proceed: do not continue (feature is not added or built), fix the issues the security agent found, or park the feature for later in PARKED_ITEMS.md (see Documentation, step 3).
 4. If the security agent does not find any issues, continue with planning the design of the implementation (step 5)
 5. Plan the design of the feature and then present the design to the code owner for approval. When approved, plan and implement tests and finally implement the code.
 6. When the feature is built and its tests pass, ask an Opus 5.5 sub-agent with no context or history and xhigh effort to review the code independently. Give it the feature description and the changes (`git diff`), and leave out your own assessment so the review isn't anchored on it. It should check correctness, security and the code conventions above.

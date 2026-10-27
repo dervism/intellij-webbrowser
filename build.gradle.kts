@@ -10,7 +10,7 @@ plugins {
 }
 
 group = "no.dervis.webbrowser"
-version = "0.7.0"
+version = "0.7.1"
 
 repositories {
     mavenCentral()
@@ -88,7 +88,7 @@ tasks.test {
     filter { excludeTestsMatching("no.dervis.webbrowser.domain.*") }
 }
 
-val domainTest by tasks.registering(Test::class) {
+val domainTest = tasks.register<Test>("domainTest") {
     description = "Pure domain tests (no IntelliJ classloader) — JaCoCo measures coverage here."
     group = "verification"
     useJUnitPlatform()

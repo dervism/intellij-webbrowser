@@ -33,12 +33,25 @@ class DevServerUrlScan private constructor(
         }
     }
 
-    private fun firstUrlIn(line: String): DevServerUrl? =
-        TerminalEscapes.strip(line)
-            .split(' ')
-            .firstNotNullOfOrNull { word ->
-                DevServerUrl.parse(word.trimStart(*WORD_OPENERS).trimEnd(*WORD_CLOSERS), excludedPorts).getOrNull()
-            }
+    /**
+     * The first URL on [stream]'s unfinished last line, read without changing anything.
+     * It is for a server that prints its URL without a line end, and must only be used
+     * once that stream has gone quiet, because an unfinished line can be cut anywhere.
+     * A tail that ends inside an escape sequence is still arriving and gives null, and a
+     * last word that ends in `:` (a host whose port hasn't arrived) is skipped.
+     */
+    fun scanTail(stream: ConsoleStream): DevServerUrl? {
+        val tail = buffers[stream]?.unfinishedLine() ?: return null
+        if (TerminalEscapes.endsInsideSequence(tail)) return null
+        val words = wordsOf(tail)
+        val settled = if (words.lastOrNull()?.endsWith(':') == true) words.dropLast(1) else words
+        return settled.firstNotNullOfOrNull(::urlIn)
+    }
+
+    private fun firstUrlIn(line: String): DevServerUrl? = wordsOf(line).firstNotNullOfOrNull(::urlIn)
+
+    private fun urlIn(word: String): DevServerUrl? =
+        DevServerUrl.parse(trimClosers(word.trimStart(*WORD_OPENERS)), excludedPorts).getOrNull()
 
     sealed interface Step {
         /** The first acceptable URL. The scan is over. */
@@ -56,6 +69,34 @@ class DevServerUrlScan private constructor(
         private const val MIN_CHUNK_COST = 64
         private val WORD_OPENERS = charArrayOf('(', '<', '[', '"', '\'')
         private val WORD_CLOSERS = charArrayOf('.', ',', ';', ':', '!', '?', ')', '>', ']', '}', '"', '\'')
+
+        // ASCII whitespace plus the Unicode space, line and paragraph separators. These only
+        // split words, after escape sequences are stripped; they never end a line, so a hidden
+        // payload can't be cut loose from its escape sequence.
+        private val WORD_SEPARATORS = Regex("[\\s\\p{Z}]+")
+
+        /** The words of one line: escape sequences are stripped first, then the line is split. */
+        private fun wordsOf(line: String): List<String> =
+            TerminalEscapes.strip(line).split(WORD_SEPARATORS).filter(String::isNotEmpty)
+
+        /**
+         * Trailing punctuation off a word, except a `]` that closes a `[` in it (an IPv6
+         * host). The brackets are counted once and the word is walked back by index, so
+         * the cost stays linear in the word's length.
+         */
+        private fun trimClosers(word: String): String {
+            val opens = word.count { it == '[' }
+            tailrec fun keptLength(length: Int, closes: Int): Int {
+                val last = word.getOrNull(length - 1) ?: return length
+                val closesBracket = last == ']' && opens >= closes
+                return if (last in WORD_CLOSERS && !closesBracket) {
+                    keptLength(length - 1, if (last == ']') closes - 1 else closes)
+                } else {
+                    length
+                }
+            }
+            return word.substring(0, keptLength(word.length, word.count { it == ']' }))
+        }
 
         fun start(excludedPorts: Set<Int>): DevServerUrlScan = DevServerUrlScan(excludedPorts, emptyMap(), 0)
     }
@@ -76,5 +117,12 @@ internal object TerminalEscapes {
     )
     private val CONTROL = Regex("[\u0000-\u001F\u007F]")
 
+    // A sequence cut off at the end of the text: a bare ESC, a CSI without its final
+    // byte, or a string sequence (OSC, DCS, SOS, PM, APC) without its terminator.
+    private val UNFINISHED = Regex("\u001B(?:\\[[0-?]*+[ -/]*+|[\\]PX^_][^\u0007\u001B]*+)?\\z")
+
     fun strip(line: String): String = line.replace(SEQUENCE, "").replace(CONTROL, " ")
+
+    /** Whether [text] ends in the middle of an escape sequence, so more of it is still to come. */
+    fun endsInsideSequence(text: String): Boolean = UNFINISHED.containsMatchIn(text)
 }

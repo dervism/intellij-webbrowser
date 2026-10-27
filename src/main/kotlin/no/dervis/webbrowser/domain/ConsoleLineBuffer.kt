@@ -25,6 +25,12 @@ class ConsoleLineBuffer private constructor(
         return next to lines
     }
 
+    /**
+     * The text after the last line end, or null when there is none. While an overlong
+     * line is being dropped there is none either.
+     */
+    fun unfinishedLine(): String? = pending.takeIf { it.isNotEmpty() }
+
     companion object {
         const val MAX_LINE_LENGTH = 4096
     }

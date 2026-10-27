@@ -70,4 +70,64 @@ class DevServerUrlListenerTest {
         emit("Listening on http://127.0.0.1:3000\n", ProcessOutputType.STDERR)
         assertEquals(listOf<String?>("http://127.0.0.1:3000/"), reported)
     }
+
+    // ---- a URL printed without a line end ------------------------------------------
+
+    private fun checks(count: Int) = repeat(count) { listener.checkQuietTails() }
+
+    @Test
+    fun `reads a URL without a line end after three quiet checks`() {
+        emit("Local: http://localhost:5173/")
+        checks(2)
+        assertEquals(emptyList(), reported)
+
+        checks(1)
+        assertEquals(listOf<String?>("http://localhost:5173/"), reported)
+    }
+
+    @Test
+    fun `output between checks starts the count again`() {
+        emit("Local: http://localhost:5")
+        checks(2)
+        emit("1")
+        checks(2)
+        assertEquals(emptyList(), reported)
+
+        emit("73/")
+        checks(3)
+        assertEquals(listOf<String?>("http://localhost:5173/"), reported)
+    }
+
+    @Test
+    fun `quiet checks are counted per stream`() {
+        emit("Local: http://localhost:5173/")
+        checks(2)
+        emit("still compiling", ProcessOutputType.STDERR)
+        checks(1)
+        assertEquals(listOf<String?>("http://localhost:5173/"), reported)
+    }
+
+    @Test
+    fun `reports once even when a check follows a complete line`() {
+        emit("Local: http://localhost:5173/\n")
+        checks(3)
+        assertEquals(listOf<String?>("http://localhost:5173/"), reported)
+    }
+
+    @Test
+    fun `reports once when a quiet last line is followed by more output`() {
+        emit("Local: http://localhost:5173/")
+        checks(3)
+        emit("\nLocal: http://localhost:4000/\n")
+        checks(3)
+        assertEquals(listOf<String?>("http://localhost:5173/"), reported)
+    }
+
+    @Test
+    fun `reads no unfinished line after the watch has ended`() {
+        emit("Local: http://localhost:5173/")
+        listener.stop()
+        checks(3)
+        assertEquals(listOf<String?>(null), reported)
+    }
 }

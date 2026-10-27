@@ -17,6 +17,7 @@ import org.jetbrains.ide.BuiltInServerManager
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.Socket
+import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 
 /**
@@ -29,6 +30,7 @@ object WebBrowserLauncher {
 
     private const val POLL_INTERVAL_MS = 500L
     private const val CONNECT_TIMEOUT_MS = 400
+    private const val TAIL_CHECK_MILLIS = 250L
     private const val JCEF_DEBUG_PORT_KEY = "ide.browser.jcef.debug.port"
     private val BUILT_IN_SERVER_PORTS = 63342..63361
     private val WATCHED = Key.create<Boolean>("no.dervis.webbrowser.devServerUrlWatch")
@@ -87,7 +89,8 @@ object WebBrowserLauncher {
 
     /**
      * Read the run console until the dev server prints a loopback URL, then open
-     * it. The watch ends on the first URL, when the process ends, when the scan's
+     * it. A URL on an unfinished last line counts once its stream has gone quiet.
+     * The watch ends on the first URL, when the process ends, when the scan's
      * output budget runs out, or after [timeoutSeconds]. It is registered under
      * the project's [WebBrowserController], so closing the project ends it too.
      * Only `host:port` is logged; console lines never are.
@@ -110,16 +113,30 @@ object WebBrowserLauncher {
             }
         }
         // The listener can finish, and dispose the watch, on a reader thread as soon
-        // as it is added. So its removal is registered first, and the timeout's
-        // cancel hook uses tryRegister in case the watch has already ended.
+        // as it is added. So its removal is registered first, and the timers are
+        // cancelled through cancelWith in case the watch has already ended.
         Disposer.register(watch, Disposable { handler.removeProcessListener(listener) })
         handler.addProcessListener(listener)
 
-        val timeout = AppExecutorUtil.getAppScheduledExecutorService()
-            .schedule({ listener.stop() }, timeoutSeconds.toLong(), TimeUnit.SECONDS)
-        if (!Disposer.tryRegister(watch, Disposable { timeout.cancel(false) })) timeout.cancel(false)
+        val scheduler = AppExecutorUtil.getAppScheduledExecutorService()
+        cancelWith(watch, scheduler.schedule({ listener.stop() }, timeoutSeconds.toLong(), TimeUnit.SECONDS))
+        // A server can print its URL without a line end; look for that a few times a second.
+        cancelWith(
+            watch,
+            scheduler.scheduleWithFixedDelay(
+                { listener.checkQuietTails() },
+                TAIL_CHECK_MILLIS,
+                TAIL_CHECK_MILLIS,
+                TimeUnit.MILLISECONDS,
+            ),
+        )
 
         if (handler.isProcessTerminated) listener.stop()
+    }
+
+    /** Cancels [task] when [watch] ends, or right away if it already has. */
+    private fun cancelWith(watch: Disposable, task: Future<*>) {
+        if (!Disposer.tryRegister(watch, Disposable { task.cancel(false) })) task.cancel(false)
     }
 
     /**

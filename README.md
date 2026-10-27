@@ -35,7 +35,8 @@ The plugin was purpose built for my own needs, because I wanted to stay in my ed
 
 ### Open on run
 - When a run configuration starts, open the tool window and navigate it to your app. Choose **which** configuration (or *Any*), the **URL** (blank = home), and **when** to open: *the URL is reachable* (polls the host:port until the server responds — the truest "after the app has loaded"; default), *the server prints its URL*, *after a fixed delay*, or *immediately on launch*. The panel opens without taking keyboard focus.
-- **Open the URL the server prints** — reads the run console and opens the first local URL the dev server prints (Vite's `Local: http://localhost:5173/`, for example), so the panel follows whichever port the server picked and the URL setting isn't needed. Only `http`/`https` URLs on this machine (`localhost`, `127.x.x.x`, `[::1]`) are opened; anything else in the console is ignored.
+- **Open the URL the server prints** — reads the run console and opens the first local URL the dev server prints (Vite's `Local: http://localhost:5173/`, for example), so the panel follows whichever port the server picked and the URL setting isn't needed. Only `http`/`https` URLs on this machine (`localhost`, `127.x.x.x`, `[::1]`) are opened; anything else in the console is ignored. A URL printed without a line break is read once the output pauses.
+- **Works with runs that show their output in the Run tool window.** A Shell Script run configuration with *Execute in the terminal* turned on (the default) is typed into a Terminal tab instead, so the plugin never sees it start or what it prints. Turn that option off to use *Open browser on run* with a shell script.
 
 ### IDE integration
 - **Open URL in Web Browser Panel** — right-click a URL in the editor (or select one) and route it to the panel instead of the OS browser. Bound to Ctrl/Cmd+Shift+B.

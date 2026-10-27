@@ -4,6 +4,21 @@ All notable changes to the **Web Browser Panel** IntelliJ plugin are recorded
 here. The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions match the artifact published to the JetBrains Marketplace.
 
+## [0.7.1] — 2026-10
+
+### Fixed
+- **A dev-server URL printed without a line break is now found.** *When the
+  server prints its URL* reads the unfinished last line once that output stream
+  has been quiet for about half a second, so a URL still arriving in pieces isn't
+  read half-way.
+- `http://[::1]` with no port or path is now recognised.
+- A URL followed by a non-breaking space or a Unicode line separator is now
+  recognised.
+
+### Parked
+- Excluding a JCEF remote-debugging port that is set to a random port from the
+  detection. See [PARKED_ITEMS.md](PARKED_ITEMS.md) for why and what it would take.
+
 ## [0.7.0] — 2026-10
 
 ### Security
