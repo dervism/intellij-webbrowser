@@ -43,4 +43,6 @@ Never add a `Co-Authored-By: Claude ...` trailer to a commit message or a "Gener
 3. If the security agent finds critical issues - stop the process, and recommend how to proceed: do not continue (feature is not added or built), fix the issues the security agent found, or park the feature for later with a notice in the ROADMAP.md file.
 4. If the security agent does not find any issues, continue with planning the design of the implementation (step 5)
 5. Plan the design of the feature and then present the design to the code owner for approval. When approved, plan and implement tests and finally implement the code.
-6. When all tests are green and the plugin is verified by the build and the code owner, the round is done.
+6. When the feature is built and its tests pass, ask an Opus 5.5 sub-agent with no context or history and xhigh effort to review the code independently. Give it the feature description and the changes (`git diff`), and leave out your own assessment so the review isn't anchored on it. It should check correctness, security and the code conventions above.
+7. Fix the issues the reviewer finds. If you disagree with a finding, present it to the code owner to decide.
+8. When all tests are green, the review findings are resolved, and the plugin is verified by the build and the code owner, the round is done.
