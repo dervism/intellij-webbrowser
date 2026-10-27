@@ -179,7 +179,7 @@ cat <<EOF
 Done. The zip is attached to the GitHub release above.
 
 Separate step — publish to the JetBrains Marketplace (GitHub ≠ Marketplace):
+  • Script:  ./scripts/publish.sh   (token from the macOS Keychain; asks first)
   • Web UI:  https://plugins.jetbrains.com  →  your plugin  →  "Upload update"
              and select:  $ZIP
-  • Or Gradle (needs a token):  PUBLISH_TOKEN=xxx ./gradlew publishPlugin
 EOF
