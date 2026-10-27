@@ -26,6 +26,7 @@ The plugin was purpose built for my own needs, because I wanted to stay in my ed
 - **Themed empty state** — a clean, theme-aware SVG screen before anything loads and when a page fails to load, in place of Chromium's raw error page.
 - **Right-click menu** — Chromium's standard context menu, plus an **Open DevTools** item and a **Zoom** submenu. **View Page Source** opens in a new tab so you can close it to dismiss source view.
 - **Per-host zoom memory** — adjust zoom on a site and it's restored automatically next time you visit the same host.
+- **Preview width** — a *Width* dropdown limits the page to *Mobile* (375), *Tablet* (768) or a *Custom* width (240–3840), centred in the panel, so you can check responsive layouts without resizing the tool window. *Desktop* uses the full panel. Widths are CSS pixels at 100% page zoom; it's one setting for every tab and project.
 - **Open in…** — hand the current page to your system default browser, or any browser configured under *Settings → Tools → Web Browsers*. Only http and https pages can be handed over.
 
 ### Live reload

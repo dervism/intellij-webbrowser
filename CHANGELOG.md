@@ -4,6 +4,16 @@ All notable changes to the **Web Browser Panel** IntelliJ plugin are recorded
 here. The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions match the artifact published to the JetBrains Marketplace.
 
+## [Unreleased]
+
+### Added
+- **Preview width.** A *Width* dropdown next to *Zoom* limits the page to
+  *Mobile* (375), *Tablet* (768) or a *Custom* width, centred in the panel with a
+  thin line at each edge, so you can check responsive layouts without resizing the
+  tool window. *Desktop* uses the full panel. Widths are CSS pixels at 100% page
+  zoom, adjusted for the IDE's own UI scale. It's one setting for every tab and
+  open project.
+
 ## [0.7.1] — 2026-10
 
 ### Fixed

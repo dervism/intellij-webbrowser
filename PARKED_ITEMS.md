@@ -20,3 +20,20 @@ If picked up: ask JCEF only when it is already running (`JBCefApp.isStarted()`) 
 the registry says debugging is on, wrap every call, exclude both the fixed and the
 reported port, and check the port again just before opening, refusing while the
 lookup hasn't answered.
+
+## Device emulation through the DevTools protocol
+Parked when the preview width presets were built. Instead of only narrowing the
+browser component, the panel could ask Chromium to emulate a device, with its pixel
+ratio, a mobile user agent and touch input, through JCEF's DevTools protocol client.
+
+Why parked: that client accepts any DevTools method with raw JSON and reaches the
+page, its cookies and storage, so it brings a powerful channel into the plugin for a
+modest gain. The width presets cover the main need, checking layouts at a device
+width.
+
+If picked up: build it on top of the width presets, with a closed list of allowed
+commands (`setDeviceMetricsOverride`, `clearDeviceMetricsOverride`,
+`setUserAgentOverride` with built-in user agents, `setTouchEmulationEnabled`), typed
+JSON, no generic sender, no event listeners, results never shown or logged, failures
+handled, changes sent only when values change, overrides cleared on *Desktop*, and a
+test that only the allowed commands can be sent.

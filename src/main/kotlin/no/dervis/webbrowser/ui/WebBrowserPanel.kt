@@ -2,6 +2,7 @@ package no.dervis.webbrowser.ui
 
 import arrow.core.Option
 import com.intellij.icons.AllIcons
+import com.intellij.ide.ui.UISettings
 import com.intellij.ide.browsers.BrowserLauncher
 import com.intellij.ide.browsers.WebBrowser
 import com.intellij.ide.browsers.WebBrowserManager
@@ -64,6 +65,7 @@ import javax.swing.InputMap
 import javax.swing.JButton
 import javax.swing.JCheckBox
 import javax.swing.JComponent
+import javax.swing.JList
 import javax.swing.JPanel
 import javax.swing.KeyStroke
 import javax.swing.SwingConstants
@@ -90,6 +92,10 @@ class WebBrowserPanel(
     private val reloadOnSaveCheck = JCheckBox("Reload on save")
     private val autoRefreshCheck = JCheckBox("Auto-refresh")
     private val intervalCombo = ComboBox(AUTO_REFRESH_PRESETS)
+
+    // Each tab's browser sits in a ViewportFrame, kept here so a width change can lay them out again.
+    private val frames = mutableMapOf<TabId, ViewportFrame>()
+    private val viewportPicker = ViewportPicker(project, parentDisposable) { relayoutPreviews() }
 
     // Tabs --------------------------------------------------------------------
     // The JBTabbedPane is the visible strip; TabRegistry owns the underlying
@@ -176,6 +182,11 @@ class WebBrowserPanel(
     // open/close events fired during restore don't immediately overwrite the
     // session we're trying to restore.
     private var isRestoring: Boolean = false
+
+    // The tab whose content is currently shown; used to clear the console only
+    // on a genuine switch (not on re-selecting the same tab). Declared before
+    // init, which activates the first tab and sets it.
+    private var shownTab: TabId? = null
 
     private val tabCallbacks = object : BrowserTabPane.Callbacks {
         override fun onAddressChange(id: TabId, displayableUrl: String) {
@@ -283,10 +294,6 @@ class WebBrowserPanel(
     }
 
     // ---- Tab management ------------------------------------------------------
-
-    // The tab whose content is currently shown; used to clear the console only
-    // on a genuine switch (not on re-selecting the same tab).
-    private var shownTab: TabId? = null
 
     /** The canonical "pinned tabs first" order: pinned in their relative order, then the rest. */
     private fun pinnedFirstOrder(): List<TabId> {
@@ -397,7 +404,8 @@ class WebBrowserPanel(
     private fun newTab(): BrowserTabPane {
         val tab = BrowserTabPane(TabId(nextTabId.getAndIncrement()), parentDisposable, tabCallbacks)
         registry.add(tab)
-        tabStrip.addTab(tab.id, "New Tab", tab.component, pinned = false)
+        val frame = ViewportFrame(tab.component, ::browserWidth).also { frames[tab.id] = it }
+        tabStrip.addTab(tab.id, "New Tab", frame, pinned = false)
         return tab
     }
 
@@ -420,6 +428,7 @@ class WebBrowserPanel(
         }
         tabStrip.removeTab(id)
         registry.remove(id)
+        frames.remove(id)
         Disposer.dispose(pane.browser)
         if (registry.isEmpty) {
             // Never leave the user with zero tabs — open a fresh blank one.
@@ -508,7 +517,7 @@ class WebBrowserPanel(
         settingsToggleButton = JButton("Settings", settingsToggleIcon()).apply {
             horizontalTextPosition = SwingConstants.LEFT
             iconTextGap = JBUI.scale(4)
-            toolTipText = "Show / hide reload, auto-refresh, zoom and Open-in"
+            toolTipText = "Show / hide reload, auto-refresh, width, zoom and Open-in"
             isFocusable = false
             addActionListener { toggleSettings() }
         }
@@ -657,6 +666,7 @@ class WebBrowserPanel(
                 add(autoRefreshCheck)
                 add(intervalCombo)
                 add(Box.createHorizontalStrut(JBUI.scale(8)))
+                add(viewportPicker.component)
                 add(zoomButton)
                 add(openInButton)
                 add(devToolsButton)
@@ -723,6 +733,23 @@ class WebBrowserPanel(
 
         refreshTimer = Timer(seconds.coerceAtLeast(1) * 1000) { activeTab()?.reload() }
             .apply { isRepeats = true; start() }
+    }
+
+    // ---- Preview width -------------------------------------------------------
+
+    /** How wide a tab's browser is inside a frame [available] pixels wide. */
+    private fun browserWidth(available: Int): Int {
+        val settings = WebBrowserSettings.getInstance()
+        return settings.viewportPreset.width(settings.customViewportWidth)
+            .browserWidth(available, UISettings.getInstance().currentIdeScale.toDouble())
+    }
+
+    /** Lays every tab's frame out again after the preview width changed; the browsers stay put. */
+    private fun relayoutPreviews() {
+        frames.values.forEach { frame ->
+            frame.revalidate()
+            frame.repaint()
+        }
     }
 
     // ---- Zoom ----------------------------------------------------------------

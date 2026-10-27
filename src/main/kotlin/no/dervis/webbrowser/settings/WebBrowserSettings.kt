@@ -6,6 +6,8 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import no.dervis.webbrowser.domain.PerHostZoom
+import no.dervis.webbrowser.domain.ViewportPreset
+import no.dervis.webbrowser.domain.ViewportWidth
 
 /**
  * Application-level persisted settings for the embedded browser.
@@ -25,6 +27,9 @@ class WebBrowserSettings : PersistentStateComponent<WebBrowserSettings.State> {
         // Per-host zoom memory: hostname → CEF zoom level. IntelliJ's XML
         // serializer needs a concrete mutable map type, not a Map interface.
         var perHostZoom: HashMap<String, Double> = HashMap(),
+        // Preview width: a ViewportPreset storage id, and the width for its CUSTOM preset.
+        var viewportPreset: String = ViewportPreset.DEFAULT.storageId,
+        var customViewportWidth: Int = ViewportWidth.DEFAULT.pixels,
     )
 
     private var state = State()
@@ -68,6 +73,20 @@ class WebBrowserSettings : PersistentStateComponent<WebBrowserSettings.State> {
         get() = state.settingsPanelExpanded
         set(value) {
             state.settingsPanelExpanded = value
+        }
+
+    /** The preview width preset, the same for every tab and project. */
+    var viewportPreset: ViewportPreset
+        get() = ViewportPreset.fromStorageId(state.viewportPreset)
+        set(value) {
+            state.viewportPreset = value.storageId
+        }
+
+    /** The width [ViewportPreset.CUSTOM] uses, clamped into range when read. */
+    var customViewportWidth: ViewportWidth
+        get() = ViewportWidth.of(state.customViewportWidth)
+        set(value) {
+            state.customViewportWidth = value.pixels
         }
 
     /** Read the stored zoom level for [host], or [no.dervis.webbrowser.domain.ZoomLevel.DEFAULT]. */
