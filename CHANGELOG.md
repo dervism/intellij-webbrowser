@@ -4,6 +4,32 @@ All notable changes to the **Web Browser Panel** IntelliJ plugin are recorded
 here. The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions match the artifact published to the JetBrains Marketplace.
 
+## [0.6.0] — 2026-10
+
+### Added
+- **Open when the server prints its URL.** A new *Open when* option for
+  *Open browser on run*. The plugin reads the run configuration's console and
+  opens the first local URL the dev server prints, such as Vite's
+  `Local: http://localhost:5173/`, so the panel follows whichever port the
+  server picked. The wait setting is how long to look. If no URL appears in
+  that time, or the process exits first, nothing opens.
+  - Only `http` and `https` URLs on this machine are opened: `localhost`,
+    `127.x.x.x` and `[::1]` (`0.0.0.0` opens as `localhost`). Network
+    addresses, other schemes and the IDE's own server and debugging ports are
+    ignored.
+  - The URL is rebuilt from checked parts and its query and fragment are
+    dropped, so tokens such as Jupyter's `?token=` are never opened, saved or
+    logged.
+
+### Changed
+- **Open browser on run no longer takes keyboard focus.** The panel is shown
+  but focus stays in the editor, so keys you type while a server starts don't
+  land in the address bar. *Open URL in Web Browser Panel* (`Ctrl/Cmd+Shift+B`)
+  still moves focus to the panel.
+- Build toolchain: Kotlin 2.4.21, IntelliJ Platform Gradle Plugin 2.19.0,
+  Arrow 2.3.0, JaCoCo 0.8.16 and Gradle 9.8.2. The build uses whichever JDK 25
+  or newer runs Gradle.
+
 ## [0.5.8] — 2026-07
 
 ### Fixed

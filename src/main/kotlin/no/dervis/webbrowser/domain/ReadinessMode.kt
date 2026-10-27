@@ -8,6 +8,7 @@ package no.dervis.webbrowser.domain
  */
 enum class ReadinessMode(val storageId: String, val displayName: String) {
     WHEN_REACHABLE("REACHABLE", "When the URL is reachable (recommended)"),
+    WHEN_ANNOUNCED("ANNOUNCED", "When the server prints its URL"),
     AFTER_DELAY("DELAY", "After a fixed delay"),
     ON_LAUNCH("ONLAUNCH", "Immediately on launch"),
     ;

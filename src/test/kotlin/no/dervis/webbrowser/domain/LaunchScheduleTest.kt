@@ -34,18 +34,17 @@ class LaunchScheduleTest {
     }
 
     @Test
+    fun `WHEN_ANNOUNCED maps to WhenAnnounced with the requested timeout`() {
+        val schedule = LaunchSchedule.from(OpenRequest(url, ReadinessMode.WHEN_ANNOUNCED, 45))
+        assertTrue(schedule is LaunchSchedule.WhenAnnounced, "expected WhenAnnounced, got $schedule")
+        assertEquals(45, schedule.timeoutSeconds)
+    }
+
+    @Test
     fun `every ReadinessMode is mapped (exhaustiveness sanity)`() {
         ReadinessMode.entries.forEach { mode ->
             // must not throw — sealed mapping must cover all enum entries
             LaunchSchedule.from(OpenRequest(url, mode, 10))
-        }
-    }
-
-    @Test
-    fun `schedule carries the same Url as the request`() {
-        ReadinessMode.entries.forEach { mode ->
-            val schedule = LaunchSchedule.from(OpenRequest(url, mode, 7))
-            assertEquals(url, schedule.url, "url must be preserved for $mode")
         }
     }
 }

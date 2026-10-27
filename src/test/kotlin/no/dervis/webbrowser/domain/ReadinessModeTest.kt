@@ -11,6 +11,7 @@ class ReadinessModeTest {
         assertEquals(ReadinessMode.WHEN_REACHABLE, ReadinessMode.fromStorageId("REACHABLE"))
         assertEquals(ReadinessMode.AFTER_DELAY, ReadinessMode.fromStorageId("DELAY"))
         assertEquals(ReadinessMode.ON_LAUNCH, ReadinessMode.fromStorageId("ONLAUNCH"))
+        assertEquals(ReadinessMode.WHEN_ANNOUNCED, ReadinessMode.fromStorageId("ANNOUNCED"))
     }
 
     @Test

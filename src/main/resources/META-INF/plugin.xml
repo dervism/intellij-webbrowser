@@ -22,7 +22,7 @@
             <li><b>Themed empty state</b> &mdash; a clean, theme-aware SVG placeholder instead of Chromium's raw error page when nothing is loaded or a site is unreachable.</li>
             <li><b>Live reload on save</b> &mdash; reload when files are saved; pick the folder and file extensions to watch.</li>
             <li><b>Timed auto-refresh</b> &mdash; reload on a fixed interval you set, in seconds.</li>
-            <li><b>Open browser on run</b> &mdash; when a run configuration starts, wait until the URL is reachable, then open and navigate the tool window automatically.</li>
+            <li><b>Open browser on run</b> &mdash; when a run configuration starts, open and navigate the tool window once the URL is reachable, or at the local URL the dev server prints in the run console.</li>
             <li><b>Open in&hellip;</b> &mdash; open the current page in your system default browser, or any browser configured under <b>Settings &gt; Tools &gt; Web Browsers</b>.</li>
         </ul>
 
@@ -52,6 +52,17 @@
 
     <!-- WHAT'S NEW: shown as the Marketplace "What's New" / change-notes section. -->
     <change-notes><![CDATA[
+        <h3>0.6.0</h3>
+        <ul>
+            <li><b>New: open when the server prints its URL.</b> A new
+            <i>Open when</i> option for <i>Open browser on run</i> reads the run
+            console and opens the first local URL the dev server prints (for
+            example Vite's <code>Local: http://localhost:5173/</code>), so the
+            panel follows whichever port the server picked. Only
+            <code>http</code>/<code>https</code> URLs on this machine are opened.</li>
+            <li><b>Open browser on run no longer takes keyboard focus</b>, so keys
+            you type while a server starts stay in the editor.</li>
+        </ul>
         <h3>0.5.8</h3>
         <ul>
             <li><b>Fix: the tool window no longer crashes on IntelliJ IDEA

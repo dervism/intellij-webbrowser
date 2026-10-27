@@ -145,6 +145,13 @@ class WebBrowserConfigurable(private val project: Project) : Configurable {
             .addLabeledComponent("Open URL (blank = home):", urlField, 1, false)
             .addLabeledComponent("Open when:", readyCombo, 1, false)
             .addLabeledComponent("Wait up to / delay (seconds):", secs, 1, false)
+            .addComponent(
+                JBLabel(
+                    "<html><i>When the server prints its URL</i> reads the run console and opens the first " +
+                        "local URL it finds (localhost, 127.x.x.x or [::1]). The Open URL above isn't used " +
+                        "in that mode.</html>",
+                ).apply { foreground = JBColor.GRAY },
+            )
             .addComponentFillVertically(JPanel(), 0)
             .panel
     }

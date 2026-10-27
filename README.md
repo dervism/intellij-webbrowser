@@ -34,7 +34,8 @@ The plugin was purpose built for my own needs, because I wanted to stay in my ed
 - **Auto-refresh** — reload on a fixed timer; pick from preset intervals (1, 2, 3, 5, 10, 30, 60 seconds).
 
 ### Open on run
-- When a run configuration starts, open the tool window and navigate it to your app. Choose **which** configuration (or *Any*), the **URL** (blank = home), and **when** to open: *the URL is reachable* (polls the host:port until the server responds — the truest "after the app has loaded"; default), *after a fixed delay*, or *immediately on launch*.
+- When a run configuration starts, open the tool window and navigate it to your app. Choose **which** configuration (or *Any*), the **URL** (blank = home), and **when** to open: *the URL is reachable* (polls the host:port until the server responds — the truest "after the app has loaded"; default), *the server prints its URL*, *after a fixed delay*, or *immediately on launch*. The panel opens without taking keyboard focus.
+- **Open the URL the server prints** — reads the run console and opens the first local URL the dev server prints (Vite's `Local: http://localhost:5173/`, for example), so the panel follows whichever port the server picked and the URL setting isn't needed. Only `http`/`https` URLs on this machine (`localhost`, `127.x.x.x`, `[::1]`) are opened; anything else in the console is ignored.
 
 ### IDE integration
 - **Open URL in Web Browser Panel** — right-click a URL in the editor (or select one) and route it to the panel instead of the OS browser. Bound to Ctrl/Cmd+Shift+B.
@@ -44,7 +45,7 @@ The settings page lives under *Settings → Tools → Web Browser Panel*, in thr
 
 - **URLs & history** — the **default home / dev-server URL** (application-wide, `http://localhost:3000` out of the box) and an optional **per-project home URL** that overrides it. **Clear address-bar history** forgets the autocomplete suggestions (with a live count of how many are stored).
 - **Reload on save** — the **folder** to watch (default: the whole project) and the file **extensions**, or — for finer control — newline-separated **watch patterns** (globs like `/project/src/**/*.{ts,tsx}`) that override the folder + extensions when set.
-- **Open browser on run** — enable opening the panel when a run configuration starts, then choose **which** configuration (or *Any*), the **URL** (blank = home), and **when** to open (the URL is reachable / after a delay / immediately).
+- **Open browser on run** — enable opening the panel when a run configuration starts, then choose **which** configuration (or *Any*), the **URL** (blank = home), and **when** to open (the URL is reachable / the server prints its URL / after a delay / immediately).
 
 **Invalid input** (empty URL, unparseable globs, …) is refused at *Apply* time with focus moved to the offending field. Most in-panel toggles — *Reload on save*, *Auto-refresh* and its interval, the collapsible *Settings* row — plus your tab session persist between sessions.
 

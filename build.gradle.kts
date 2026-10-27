@@ -10,7 +10,7 @@ plugins {
 }
 
 group = "no.dervis.webbrowser"
-version = "0.5.8"
+version = "0.6.0"
 
 repositories {
     mavenCentral()
