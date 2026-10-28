@@ -130,6 +130,28 @@ class UrlTest {
     }
 
     @Test
+    fun `host and port survive characters URI rejects after the authority`() {
+        // Chromium leaves these unescaped in the path, query and fragment.
+        listOf(
+            "http://localhost:5173/?q={a}", "http://localhost:5173/?filter={%22a%22:1}",
+            "http://localhost:5173/?f=a`b", "http://localhost:5173/?x=%zz", "http://localhost:5173/#/a|b",
+            "http://localhost:5173/a^b", "http://localhost:5173?q={a}", "http://localhost:5173#a|b",
+        ).forEach {
+            val url = Url.live(it).getOrNull()
+            assertEquals("localhost", url?.host, it)
+            assertEquals(5173, url?.port, it)
+            assertEquals("http://localhost:5173", url?.redacted, it)
+        }
+        assertEquals("[::1]", Url.live("http://[::1]:3000/?q={a}").getOrNull()?.host)
+    }
+
+    @Test
+    fun `user info is never taken for the host`() {
+        assertEquals("evil.com", Url.live("http://localhost:5173@evil.com/?q={a}").getOrNull()?.host)
+        assertEquals("evil.com", Url.live("http://localhost@evil.com/").getOrNull()?.host)
+    }
+
+    @Test
     fun `input with spaces has no Url and so no host`() {
         assertNull(Url.web("not a url with spaces").getOrNull()?.host)
     }

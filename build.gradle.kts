@@ -100,6 +100,40 @@ val domainTest = tasks.register<Test>("domainTest") {
 
 tasks.named("check") { dependsOn(domainTest) }
 
+// Opt-in browser checks for the live-reload scripts in ui/LiveReloadScripts.kt.
+// They run the scripts in a real Chromium through Playwright, so they need Node.js
+// and npm, and the first run downloads Playwright's Chromium. Not part of `check`:
+// run `./gradlew liveReloadBrowserTest` after changing the scripts.
+val liveReloadScriptsDir = layout.buildDirectory.dir("livereload-scripts")
+val liveReloadChecksDir = layout.projectDirectory.dir("src/test/js/livereload")
+val npm = if (System.getProperty("os.name").startsWith("Windows")) "npm.cmd" else "npm"
+
+val exportLiveReloadScripts = tasks.register<JavaExec>("exportLiveReloadScripts") {
+    description = "Writes the compiled live-reload scripts to build/livereload-scripts."
+    classpath = sourceSets["test"].runtimeClasspath
+    mainClass = "no.dervis.webbrowser.ui.LiveReloadScriptsExportKt"
+    args(liveReloadScriptsDir.get().asFile.absolutePath)
+    outputs.dir(liveReloadScriptsDir)
+}
+
+val liveReloadNpmInstall = tasks.register<Exec>("liveReloadNpmInstall") {
+    description = "Installs the pinned Playwright for the live-reload browser checks."
+    workingDir(liveReloadChecksDir)
+    // No package install scripts: Playwright fetches its browser in the test step.
+    commandLine(npm, "ci", "--ignore-scripts")
+    inputs.file(liveReloadChecksDir.file("package-lock.json"))
+    outputs.dir(liveReloadChecksDir.dir("node_modules"))
+}
+
+tasks.register<Exec>("liveReloadBrowserTest") {
+    description = "Runs the live-reload scripts in a real Chromium (opt-in; needs Node.js and npm)."
+    group = "verification"
+    dependsOn(exportLiveReloadScripts, liveReloadNpmInstall)
+    workingDir(liveReloadChecksDir)
+    environment("LIVE_RELOAD_SCRIPTS", liveReloadScriptsDir.get().asFile.absolutePath)
+    commandLine(npm, "test")
+}
+
 jacoco {
     // 0.8.13+ adds experimental support for recent Java releases — required
     // because the Gradle daemon and test JVM run on the installed JDK (25+, e.g.

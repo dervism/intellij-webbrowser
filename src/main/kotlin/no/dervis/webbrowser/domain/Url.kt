@@ -24,7 +24,7 @@ value class Url private constructor(val value: String) {
         get() = value.substringBefore("://")
 
     val host: String?
-        get() = runCatching { URI(value).host }.getOrNull()
+        get() = authority()?.host
 
     /** The explicit port, or the scheme's default when none is given. */
     val port: Int
@@ -36,12 +36,24 @@ value class Url private constructor(val value: String) {
 
     override fun toString(): String = value
 
-    private fun explicitPort(): Int? = runCatching { URI(value).port }.getOrNull()?.takeIf { it != -1 }
+    private fun explicitPort(): Int? = authority()?.port?.takeIf { it != -1 }
+
+    /**
+     * `scheme://authority` as a [URI]. Only that part is parsed, so characters
+     * Chromium leaves unescaped in the path, query or fragment (`{`, `|`, `%zz`)
+     * don't hide the host.
+     */
+    private fun authority(): URI? {
+        val start = value.indexOf("://") + 3
+        val end = value.indexOfAny(AUTHORITY_END, start).takeIf { it >= 0 } ?: value.length
+        return runCatching { URI(value.substring(0, end)) }.getOrNull()
+    }
 
     companion object {
         const val MAX_LENGTH = 8192
         private const val HTTP_PORT = 80
         private const val HTTPS_PORT = 443
+        private val AUTHORITY_END = charArrayOf('/', '?', '#')
         private val WEB_SCHEMES = setOf("http", "https")
         private val TYPED_SCHEMES = WEB_SCHEMES + "file"
         private val EXPLICIT_SCHEME = Regex("^([A-Za-z][A-Za-z0-9+.-]*)://")

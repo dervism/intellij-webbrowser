@@ -40,6 +40,7 @@ import no.dervis.webbrowser.domain.AddressBarRequest
 import no.dervis.webbrowser.domain.ClosedTabHistory
 import no.dervis.webbrowser.domain.ConsoleMessage
 import no.dervis.webbrowser.domain.HomeUrlResolver
+import no.dervis.webbrowser.domain.ReloadPlan
 import no.dervis.webbrowser.domain.ReloadRule
 import no.dervis.webbrowser.domain.TabId
 import no.dervis.webbrowser.domain.TabLimits
@@ -56,6 +57,7 @@ import java.awt.FlowLayout
 import java.awt.Toolkit
 import java.awt.event.KeyEvent
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicReference
 import javax.swing.AbstractAction
 import javax.swing.ActionMap
 import javax.swing.Box
@@ -121,6 +123,8 @@ class WebBrowserPanel(
 
     // Live-reload plumbing.
     private val reloadAlarm = Alarm(Alarm.ThreadToUse.SWING_THREAD, parentDisposable)
+    // Saves waiting out the debounce. VFS events can arrive off the EDT, hence the atomic.
+    private val pendingSaves = AtomicReference<Set<String>>(emptySet())
     private var vfsConnection: MessageBusConnection? = null
     private var refreshTimer: Timer? = null
 
@@ -144,7 +148,7 @@ class WebBrowserPanel(
         override fun getTooltip(): String = if (isLoading) "Stop loading" else "Reload"
         override fun isIconBeforeText(): Boolean = true
         override fun getActionOnClick(): Runnable = Runnable {
-            if (isLoading) activeTab()?.stopLoad() else activeTab()?.reload()
+            if (isLoading) activeTab()?.stopLoad() else reloadActiveTab()
         }
     }
 
@@ -696,32 +700,48 @@ class WebBrowserPanel(
         val connection = ApplicationManager.getApplication().messageBus.connect(parentDisposable)
         connection.subscribe(VirtualFileManager.VFS_CHANGES, object : BulkFileListener {
             override fun after(events: MutableList<out VFileEvent>) {
-                if (events.any { it.isFileSave() && saveTriggersReload(it.path) }) scheduleReload()
+                val saved = events.filter { it.isFileSave() }.map { it.path }
+                if (saved.isEmpty()) return
+                val watched = saved.filter(watchedFileMatcher())
+                if (watched.isNotEmpty()) scheduleReload(watched)
             }
         })
         vfsConnection = connection
     }
 
     /**
-     * Decide whether a saved file should trigger reload. Glob patterns (when
-     * set) take precedence; otherwise we fall back to the simple
-     * folder + extensions [ReloadRule].
+     * Which saved files trigger a reload. Glob patterns (when set) take
+     * precedence; otherwise we fall back to the simple folder + extensions
+     * [ReloadRule].
      */
-    private fun saveTriggersReload(savedPath: String): Boolean {
+    private fun watchedFileMatcher(): (String) -> Boolean {
         val proj = WebBrowserProjectSettings.getInstance(project)
         val globs = WatchGlobs.parse(proj.watchPatterns)
-        if (!globs.isEmpty) return globs.matches(savedPath)
+        if (!globs.isEmpty) return globs::matches
         val root = proj.watchPath.ifBlank { project.basePath.orEmpty() }
-        return ReloadRule.of(root, WebBrowserSettings.getInstance().watchExtensions).matches(savedPath)
+        return ReloadRule.of(root, WebBrowserSettings.getInstance().watchExtensions)::matches
     }
 
     private fun VFileEvent.isFileSave(): Boolean =
         this is VFileContentChangeEvent || this is VFileCreateEvent
 
-    private fun scheduleReload() {
+    private fun scheduleReload(savedPaths: Collection<String>) {
         // Debounce: a single save can produce several VFS events / rapid saves.
+        // The plan looks at every file saved within the window.
+        pendingSaves.updateAndGet { it + savedPaths }
         reloadAlarm.cancelAllRequests()
-        reloadAlarm.addRequest({ activeTab()?.reload() }, RELOAD_DEBOUNCE_MS)
+        reloadAlarm.addRequest(::reloadForPendingSaves, RELOAD_DEBOUNCE_MS)
+    }
+
+    private fun reloadForPendingSaves() {
+        val saved = pendingSaves.getAndSet(emptySet())
+        if (saved.isEmpty()) return
+        activeTab()?.let { it.refresh(ReloadPlan.forSaves(saved, it.currentUrl())) }
+    }
+
+    /** The Reload button and auto-refresh: reload, keeping the scroll position. */
+    private fun reloadActiveTab() {
+        activeTab()?.let { it.refresh(ReloadPlan.forReload(it.currentUrl())) }
     }
 
     // ---- Timed auto-refresh --------------------------------------------------
@@ -731,7 +751,7 @@ class WebBrowserPanel(
         refreshTimer = null
         if (!enabled) return
 
-        refreshTimer = Timer(seconds.coerceAtLeast(1) * 1000) { activeTab()?.reload() }
+        refreshTimer = Timer(seconds.coerceAtLeast(1) * 1000) { reloadActiveTab() }
             .apply { isRepeats = true; start() }
     }
 

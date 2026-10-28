@@ -1,0 +1,4 @@
+<!doctype html><html><head><title>late</title></head>
+<body><script>history.scrollRestoration='manual';
+setTimeout(function(){ var d=document.createElement('div'); d.style.height='6000px'; d.textContent='rendered late'; document.body.appendChild(d); }, 600);</script>
+<h1>Content renders 600 ms after load</h1></body></html>

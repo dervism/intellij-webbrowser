@@ -25,7 +25,6 @@ value class DevServerUrl private constructor(val url: Url) {
         private const val MAX_PATH_LENGTH = 256
         private const val MAX_PORT = 65_535
         private val PATH = Regex("(?:[A-Za-z0-9\\-._~/]|%[0-9A-Fa-f]{2})*")
-        private val IPV4_OCTET = Regex("0|[1-9][0-9]{0,2}")
 
         /**
          * Accepts [candidate] only if every part passes, otherwise [arrow.core.None].
@@ -39,7 +38,7 @@ value class DevServerUrl private constructor(val url: Url) {
             val authority = beforeQuery.substringBefore('/')
             val path = beforeQuery.removePrefix(authority).ifEmpty { "/" }
             val (rawHost, rawPort) = ensureNotNull(splitAuthority(authority))
-            val host = ensureNotNull(loopbackHost(rawHost))
+            val host = ensureNotNull(LoopbackHost.canonical(rawHost))
             val port = rawPort?.let { ensureNotNull(parsePort(it)) }
             ensure((port ?: defaultPort(scheme)) !in excludedPorts)
             ensure(path.length <= MAX_PATH_LENGTH && PATH.matches(path))
@@ -66,21 +65,6 @@ value class DevServerUrl private constructor(val url: Url) {
             }
             ':' in authority -> authority.substringBefore(':') to authority.substringAfter(':')
             else -> authority to null
-        }
-
-        /** The canonical loopback host, or null for anything that isn't a literal loopback address. */
-        private fun loopbackHost(host: String): String? = when (host.lowercase()) {
-            "localhost", "0.0.0.0", "[::]" -> "localhost"
-            "[::1]" -> "[::1]"
-            else -> host.takeIf(::isLoopbackIpv4)
-        }
-
-        /** Dotted-decimal `127.x.x.x` with four octets, each 0–255 without leading zeros. */
-        private fun isLoopbackIpv4(host: String): Boolean {
-            val octets = host.split('.')
-            return octets.size == 4 &&
-                octets[0] == "127" &&
-                octets.all { IPV4_OCTET.matches(it) && it.toInt() <= 255 }
         }
 
         /** 1–65535 written without leading zeros, or null. */

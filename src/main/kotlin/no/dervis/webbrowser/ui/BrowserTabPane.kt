@@ -6,6 +6,7 @@ import com.intellij.ui.jcef.JBCefBrowser
 import no.dervis.webbrowser.domain.AddressBarFilter
 import no.dervis.webbrowser.domain.ConsoleMessage
 import no.dervis.webbrowser.domain.DisplayText
+import no.dervis.webbrowser.domain.ReloadPlan
 import no.dervis.webbrowser.domain.TabId
 import no.dervis.webbrowser.domain.Url
 import no.dervis.webbrowser.domain.ViewSourceTransform
@@ -83,6 +84,18 @@ internal class BrowserTabPane(
     fun goBack() { browser.cefBrowser.goBack() }
     fun goForward() { browser.cefBrowser.goForward() }
     fun reload() { browser.cefBrowser.reload() }
+
+    /** Refresh the page the way [plan] says. The scripts run in the main frame. */
+    fun refresh(plan: ReloadPlan): Unit = when (plan) {
+        ReloadPlan.HotSwapCss -> runInPage(LiveReloadScripts.HOT_SWAP_CSS)
+        ReloadPlan.KeepScroll -> runInPage(LiveReloadScripts.SAVE_SCROLL_AND_RELOAD)
+        ReloadPlan.Plain -> reload()
+    }
+
+    private fun runInPage(script: String) {
+        browser.cefBrowser.executeJavaScript(script, currentUrl(), 0)
+    }
+
     /** Reload bypassing the disk cache — equivalent to Chrome's Ctrl/Cmd+Shift+R. */
     fun reloadIgnoreCache() { browser.cefBrowser.reloadIgnoreCache() }
     /** Stop the current load (no-op if the page is already idle). */
@@ -208,11 +221,13 @@ internal class BrowserTabPane(
             }
 
             // Force light scheme on untheme pages — see WebBrowserPanel for the rationale.
+            // On http(s) pages, also scroll back to a position refresh() saved.
             override fun onLoadEnd(cefBrowser: CefBrowser?, frame: CefFrame?, httpStatusCode: Int) {
                 if (frame?.isMain != true) return
                 val url = cefBrowser?.url.orEmpty()
                 if (url.startsWith("data:") || url.startsWith("about:")) return
                 frame.executeJavaScript(FORCE_LIGHT_FOR_UNTHEMED_JS, url, 0)
+                if (Url.live(url).isSome()) frame.executeJavaScript(LiveReloadScripts.RESTORE_SCROLL, url, 0)
             }
         }, browser.cefBrowser)
 

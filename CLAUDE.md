@@ -24,6 +24,7 @@ The README's Requirements and Build sections cover setup: JDK 25 or newer, and t
 2. `./gradlew test` runs the IntelliJ platform tests (`BasePlatformTestCase`).
 3. `./gradlew clean buildPlugin` builds the plugin zip into `build/distributions/`.
 4. `./gradlew verifyPlugin` runs the JetBrains Plugin Verifier against the IDE builds set in `build.gradle.kts`. The first run downloads those IDEs (several GB) and caches them.
+5. `./gradlew liveReloadBrowserTest` runs the live-reload scripts (`ui/LiveReloadScripts.kt`) in a real Chromium through Playwright. It's opt-in and not part of `check`: run it whenever those scripts change. It needs Node.js 20+ and npm, and the first run downloads Playwright's Chromium.
 
 Known issue: with the local IntelliJ IDEA 2026.2.3 (build 262.10968.63), every test in `./gradlew test` fails with `Cannot create extension (class=Z.Z.Z.Z.Z) [Plugin: com.intellij.modules.ultimate]`. The bug is in the IDE's bundled Ultimate plugin, not in this code, and `./gradlew check` fails for the same reason. Until an IDE update fixes it, verify with `domainTest`, `buildPlugin` and `verifyPlugin`, and report the platform tests as blocked by the IDE bug.
 

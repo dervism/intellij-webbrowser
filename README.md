@@ -33,6 +33,8 @@ The plugin was purpose built for my own needs, because I wanted to stay in my ed
 - **Reload on save** — reload when a watched file is saved (⌘S or IntelliJ autosave). Pick the **folder** to watch (default: the whole project) and the **extensions** (default: common web files like `html, css, scss, js, ts, jsx, tsx, vue, svelte`).
 - **Watch patterns** — for finer control, supply one glob per line (e.g. `/project/src/**/*.{ts,tsx}`). Patterns override the simple folder + extensions scheme when present.
 - **Auto-refresh** — reload on a fixed timer; pick from preset intervals (1, 2, 3, 5, 10, 30, 60 seconds).
+- **Keeps your place** — the reload button, auto-refresh and reload on save bring the page back to where it was scrolled, also when content renders a moment after the page loads. Scroll during that moment and the page stays where you put it. Hard reload (Ctrl/Cmd+Shift+R) is still a plain reload that skips the cache.
+- **CSS without a reload** — when every file in a save is a `.css` file and the page is served from this machine (`localhost`, `127.x.x.x`, `[::1]`), the panel fetches the page's stylesheets again and swaps them in, so scroll position, form input and SPA state stay. That covers the `<link rel="stylesheet">` tags in the page itself that load from this machine; each fresh copy is requested with a `webBrowserPanelReload` query parameter so the cache can't serve the old one. CSS a bundler injects as `<style>` tags isn't swapped, and the dev server's hot module replacement usually updates it anyway. A save that includes Sass, Less or any other file reloads the page, since the dev server has to rebuild those. So does a page with no such stylesheet, and a page that shows a page from its own server in a frame (Storybook, for example), because the panel can't see the frame's stylesheets. These reloads keep the scroll position.
 
 ### Open on run
 - When a run configuration starts, open the tool window and navigate it to your app. Choose **which** configuration (or *Any*), the **URL** (blank = home), and **when** to open: *the URL is reachable* (polls the host:port until the server responds — the truest "after the app has loaded"; default), *the server prints its URL*, *after a fixed delay*, or *immediately on launch*. The panel opens without taking keyboard focus.
@@ -96,6 +98,11 @@ LOCAL_IDE_PATH="/path/to/IDE" ./gradlew buildPlugin  # environment variable
 example is included) or in `~/.gradle/gradle.properties`.
 
 The installable plugin zip lands in `build/distributions/`.
+
+The scripts that keep the scroll position and swap stylesheets have their own
+browser tests, which need Node.js and npm. They aren't part of the normal build;
+run `./gradlew liveReloadBrowserTest` after changing those scripts. See
+[src/test/js/livereload](src/test/js/livereload/README.md).
 
 ## Try it without installing
 

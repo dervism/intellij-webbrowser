@@ -13,6 +13,20 @@ versions match the artifact published to the JetBrains Marketplace.
   tool window. *Desktop* uses the full panel. Widths are CSS pixels at 100% page
   zoom, adjusted for the IDE's own UI scale. It's one setting for every tab and
   open project.
+- **Reloads keep the scroll position.** The reload button, auto-refresh and
+  reload on save bring the page back to where it was scrolled. The panel keeps
+  trying for up to two seconds while content renders, and stops as soon as you
+  scroll. Hard reload is still a plain reload that skips the cache.
+- **CSS changes without a reload.** When only `.css` files are saved and the page
+  is served from this machine, the page's stylesheets from this machine are
+  fetched again and swapped in, so scroll, form and SPA state stay. If the save
+  includes any other file, the page has no such stylesheet, or it shows a page
+  from its own server in a frame, the page reloads and keeps its scroll position.
+
+### Fixed
+- Per-host zoom now also applies to pages whose URL has characters such as `{`
+  or `|` in the query or fragment. Those pages used to open at the default zoom,
+  and zooming on them wasn't remembered.
 
 ## [0.7.1] — 2026-10
 
