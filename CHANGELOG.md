@@ -4,7 +4,7 @@ All notable changes to the **Web Browser Panel** IntelliJ plugin are recorded
 here. The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions match the artifact published to the JetBrains Marketplace.
 
-## [Unreleased]
+## [0.8.0] — 2026-10
 
 ### Added
 - **Preview width.** A *Width* dropdown next to *Zoom* limits the page to

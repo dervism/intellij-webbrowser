@@ -22,6 +22,8 @@
             <li><b>Themed empty state</b> &mdash; a clean, theme-aware SVG placeholder instead of Chromium's raw error page when nothing is loaded or a site is unreachable.</li>
             <li><b>Live reload on save</b> &mdash; reload when files are saved; pick the folder and file extensions to watch.</li>
             <li><b>Timed auto-refresh</b> &mdash; reload on a fixed interval you set, in seconds.</li>
+            <li><b>Keeps your place</b> &mdash; reloads bring the page back to where it was scrolled, and a save of only <code>.css</code> files swaps the stylesheets of a local page without reloading it.</li>
+            <li><b>Preview width</b> &mdash; show the page at a mobile, tablet or custom width to check responsive layouts without resizing the tool window.</li>
             <li><b>Open browser on run</b> &mdash; when a run configuration starts, open and navigate the tool window once the URL is reachable, or at the local URL the dev server prints in the run console.</li>
             <li><b>Open in&hellip;</b> &mdash; open the current page in your system default browser, or any browser configured under <b>Settings &gt; Tools &gt; Web Browsers</b>.</li>
         </ul>
@@ -52,6 +54,23 @@
 
     <!-- WHAT'S NEW: shown as the Marketplace "What's New" / change-notes section. -->
     <change-notes><![CDATA[
+        <h3>0.8.0</h3>
+        <ul>
+            <li><b>New: preview width.</b> A <i>Width</i> dropdown next to
+            <i>Zoom</i> limits the page to <i>Mobile</i> (375), <i>Tablet</i> (768)
+            or a <i>Custom</i> width, centred in the panel, so you can check
+            responsive layouts without resizing the tool window.</li>
+            <li><b>New: reloads keep the scroll position.</b> The reload button,
+            auto-refresh and reload on save bring the page back to where it was
+            scrolled, also when content renders a moment after the page loads.</li>
+            <li><b>New: CSS changes without a reload.</b> When only
+            <code>.css</code> files are saved and the page is served from this
+            machine, its stylesheets are swapped in place, so scroll, form and SPA
+            state stay.</li>
+            <li><b>Fix:</b> per-host zoom now also applies to pages whose URL has
+            characters such as <code>{</code> or <code>|</code> in the query or
+            fragment.</li>
+        </ul>
         <h3>0.7.1</h3>
         <ul>
             <li><b>Fix:</b> <i>When the server prints its URL</i> now finds a URL
